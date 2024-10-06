@@ -12,7 +12,6 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.packet.s2c.play.EntityStatusS2CPacket;
 import net.minecraft.particle.ParticleEffect;
-import net.minecraft.particle.ParticleType;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.particle.ParticleUtil;
 import net.minecraft.util.math.BlockPos;
@@ -58,7 +57,7 @@ public class DeathParticles extends ListenerModule {
         if (!shouldApplyEffect(entity))
             return;
 
-        ParticleType<? extends ParticleEffect> particle = particlesType.getVal().particleType;
+        ParticleEffect particle = particlesType.getVal().getParticleEffect();
         double velocity = system.random.getRandomDouble(particleVelocity.getVal());
         BlockPos entityPos = entity.getBlockPos();
         World world = entity.getEntityWorld();
@@ -70,7 +69,7 @@ public class DeathParticles extends ListenerModule {
                     system.random.getRandomDouble(velocity * 0.5),
                     system.random.getRandomDouble(-velocity, velocity)
             );
-            ParticleUtil.spawnParticle(world, entityPos, direction, (ParticleEffect) particle, velocityVec, 0.55);
+            ParticleUtil.spawnParticle(world, entityPos, direction, particle, velocityVec, 0.55);
         }
     }
 
@@ -83,7 +82,7 @@ public class DeathParticles extends ListenerModule {
     }
 
     public DeathParticles() {
-        super("death-particles", Categories.RENDER, "Spawn particles upon entity death.");
+        super("death-particles", Categories.RENDER, "Spawn particles upon entity death");
     }
 
     public enum Entities {
@@ -91,7 +90,6 @@ public class DeathParticles extends ListenerModule {
         ENTITIES,
         BOTH
     }
-
     public enum Particles {
         TOTEM(ParticleTypes.TOTEM_OF_UNDYING),
         FIREWORK(ParticleTypes.FIREWORK),
@@ -100,10 +98,14 @@ public class DeathParticles extends ListenerModule {
         FLASH(ParticleTypes.FLASH),
         WARDEN_BEAM(ParticleTypes.SONIC_BOOM);
 
-        private final ParticleType<? extends ParticleEffect> particleType;
+        private final ParticleEffect particleEffect;
 
-        Particles(ParticleType<? extends ParticleEffect> particleType) {
-            this.particleType = particleType;
+        Particles(ParticleEffect particleEffect) {
+            this.particleEffect = particleEffect;
+        }
+
+        public ParticleEffect getParticleEffect() {
+            return particleEffect;
         }
     }
 }

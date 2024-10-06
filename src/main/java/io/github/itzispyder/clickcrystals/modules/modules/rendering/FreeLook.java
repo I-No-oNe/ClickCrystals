@@ -8,8 +8,8 @@ import io.github.itzispyder.clickcrystals.modules.settings.SettingSection;
 import net.minecraft.client.option.Perspective;
 
 public class FreeLook extends DummyModule {
-    private final SettingSection scGeneral = getGeneralSection();
 
+    private final SettingSection scGeneral = getGeneralSection();
     public final ModuleSetting<POV> PerspectivePoint = scGeneral.add(EnumSetting.create(POV.class)
             .name("camera-perspective")
             .description("The Perspective Which Lock The Camera.")

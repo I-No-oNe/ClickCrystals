@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(Camera.class)
+@Mixin(value = Camera.class, priority = 1500)
 public abstract class MixinCamera implements Global {
 
     @Unique private boolean bypassCameraClip;
