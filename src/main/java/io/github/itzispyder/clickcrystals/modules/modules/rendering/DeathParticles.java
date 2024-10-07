@@ -8,15 +8,13 @@ import io.github.itzispyder.clickcrystals.modules.modules.ListenerModule;
 import io.github.itzispyder.clickcrystals.modules.settings.DoubleSetting;
 import io.github.itzispyder.clickcrystals.modules.settings.EnumSetting;
 import io.github.itzispyder.clickcrystals.modules.settings.SettingSection;
+import io.github.itzispyder.clickcrystals.util.minecraft.PlayerUtils;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.packet.s2c.play.EntityStatusS2CPacket;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
-import net.minecraft.particle.ParticleUtil;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
 public class DeathParticles extends ListenerModule {
@@ -47,30 +45,22 @@ public class DeathParticles extends ListenerModule {
     );
 
     @EventHandler
-    private void onReceivePacket(PacketReceiveEvent e) {
-        if (!(e.getPacket() instanceof EntityStatusS2CPacket packet))
+    private void onReceivePacket(PacketReceiveEvent event) {
+        if (!(event.getPacket() instanceof EntityStatusS2CPacket packet))
             return;
         if (packet.getStatus() != 3)
             return;
 
         Entity entity = packet.getEntity(mc.player.getWorld());
-        if (!shouldApplyEffect(entity))
+        if (!shouldApplyEffect(entity)) {
             return;
-
-        ParticleEffect particle = particlesType.getVal().getParticleEffect();
-        double velocity = system.random.getRandomDouble(particleVelocity.getVal());
-        BlockPos entityPos = entity.getBlockPos();
-        World world = entity.getEntityWorld();
-
-        for (int i = 0; i < system.random.getRandomInt(5, 10); i++) {
-            Direction direction = Direction.byId(system.random.getRandomInt(0, 5));
-            Vec3d velocityVec = new Vec3d(
-                    system.random.getRandomDouble(-velocity, velocity),
-                    system.random.getRandomDouble(velocity * 0.5),
-                    system.random.getRandomDouble(-velocity, velocity)
-            );
-            ParticleUtil.spawnParticle(world, entityPos, direction, particle, velocityVec, 0.55);
         }
+
+        World w = PlayerUtils.getWorld();
+        ParticleEffect p = particlesType.getVal().getParticleEffect();
+        var v = particleVelocity.getVal();
+        BlockPos e = entity.getBlockPos();
+        w.addImportantParticle(p, e.getX(), e.getY(), e.getZ(), system.random.getRandomDouble(-v, v), system.random.getRandomDouble(v * 0.5), system.random.getRandomDouble(-v, v));
     }
 
     public boolean shouldApplyEffect(Entity entity) {
