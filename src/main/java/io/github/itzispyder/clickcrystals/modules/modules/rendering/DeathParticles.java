@@ -8,14 +8,13 @@ import io.github.itzispyder.clickcrystals.modules.modules.ListenerModule;
 import io.github.itzispyder.clickcrystals.modules.settings.DoubleSetting;
 import io.github.itzispyder.clickcrystals.modules.settings.EnumSetting;
 import io.github.itzispyder.clickcrystals.modules.settings.SettingSection;
-import io.github.itzispyder.clickcrystals.util.minecraft.PlayerUtils;
+import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.packet.s2c.play.EntityStatusS2CPacket;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 
 public class DeathParticles extends ListenerModule {
 
@@ -56,7 +55,7 @@ public class DeathParticles extends ListenerModule {
             return;
         }
 
-        World w = PlayerUtils.getWorld();
+        ClientWorld w = mc.world;
         ParticleEffect p = particlesType.getVal().getParticleEffect();
         var v = particleVelocity.getVal();
         BlockPos e = entity.getBlockPos();
