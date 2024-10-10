@@ -196,7 +196,11 @@ public class EntityUtils implements Global {
     public static boolean isSameColorNameTeam(PlayerEntity player) {
         String playerColorName = String.valueOf(PlayerUtils.player().getTeamColorValue());
         String targetColorName = String.valueOf(player.getTeamColorValue());
-        return Objects.equals(playerColorName, targetColorName);
+        final int WHITE_COLOR_CODE = 0xFFFFFF;
+        if ((WHITE_COLOR_CODE == player.getTeamColorValue()) || WHITE_COLOR_CODE == PlayerUtils.player().getTeamColorValue()) {
+            return false;
+        }
+            return Objects.equals(playerColorName, targetColorName);
     }
 
     public static List<Entity> getEntitiesAt(BlockPos pos) {

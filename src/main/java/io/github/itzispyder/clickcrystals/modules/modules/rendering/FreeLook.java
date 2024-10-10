@@ -14,13 +14,26 @@ import net.minecraft.util.math.MathHelper;
 public class FreeLook extends ListenerModule {
 
     private final SettingSection scGeneral = getGeneralSection();
-    public final ModuleSetting<POV> PerspectivePoint = scGeneral.add(EnumSetting.create(POV.class)
+    public final ModuleSetting<POV> perspectivePoint = scGeneral.add(EnumSetting.create(POV.class)
             .name("camera-perspective")
-            .description("The Perspective Which Lock The Camera.")
+            .description("The perspective which lock the camera.")
             .def(POV.THIRD_PERSON_FOV)
             .build()
     );
-
+    public final ModuleSetting<Integer> freeLookPerspective = scGeneral.add(createIntSetting()
+            .name("change-perspective-angle")
+            .description("Change the pitch of the module perspective.")
+            .def(90)
+            .min(-90)
+            .max(90)
+            .build()
+    );
+    public final ModuleSetting<Boolean> changeToPov = scGeneral.add(createBoolSetting()
+            .name("change-to-camera-perspective-on-enable")
+            .description("Change to the selected camera perspective on module enable.")
+            .def(false)
+            .build()
+    );
     public FreeLook() {
         super("free-look", Categories.RENDER, "lock your camera perspective and let you move around it");
     }
@@ -28,19 +41,25 @@ public class FreeLook extends ListenerModule {
     public float cY;
     public float cP;
 
-
     @Override
     public void onEnable() {
         if (PlayerUtils.invalid()) return;
         cY = mc.player.getYaw();
         cP = mc.player.getPitch();
+        if (changeToPov.getVal()) mc.options.setPerspective(perspectivePoint.getVal().getPerspective());
+    }
+
+    @Override
+    public void onDisable(){
+        if (PlayerUtils.invalid()) return;
+        if (changeToPov.getVal()) mc.options.setPerspective(Perspective.FIRST_PERSON);
     }
 
 
     @EventHandler
     private void onTick(ClientTickEndEvent e) {
-        PlayerUtils.player().setPitch(MathHelper.clamp(PlayerUtils.player().getPitch(), -90, 90));
-        cP = MathHelper.clamp(cP, -90, 90);
+        PlayerUtils.player().setPitch(MathHelper.clamp(PlayerUtils.player().getPitch(), freeLookPerspective.getVal() - 180, freeLookPerspective.getVal()));
+        cP = MathHelper.clamp(cP, freeLookPerspective.getVal() - 180, freeLookPerspective.getVal());
     }
 
     public enum POV {
