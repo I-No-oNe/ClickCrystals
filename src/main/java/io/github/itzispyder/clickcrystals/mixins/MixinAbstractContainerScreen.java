@@ -19,6 +19,6 @@ public abstract class MixinAbstractContainerScreen implements Global {
 
     @Inject(method = "extractSlot", at = @At("HEAD"))
     public void drawItemInSlot(GuiGraphicsExtractor graphics, Slot slot, int mouseX, int mouseY, CallbackInfo ci) {
-        system.eventBus.pass(new RenderInventorySlotEvent(graphics, slot.getItem(), slot.x + leftPos, slot.y + topPos, slot.x, slot.y));
+        system.eventBus.pass(new RenderInventorySlotEvent(graphics, slot.getItem(), slot.x + leftPos, slot.y + topPos, slot.x, slot.y, slot.index));
     }
 }

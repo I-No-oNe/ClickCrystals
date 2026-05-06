@@ -156,6 +156,11 @@ public class GuiCursor extends Module implements Listener {
     private void renderInventoryItem(RenderInventorySlotEvent e) {
         if (collectState == -1) return;
 
+        int index = e.getIndex();
+
+        // Skip armor slots (5-8), crafting slots (0-4) — can never have totems
+        if (index < 9 || index > 44) return;
+
         int sx = e.getX() + 8;
         int sy = e.getY() + 8;
 
@@ -167,8 +172,10 @@ public class GuiCursor extends Module implements Listener {
 
         allSlots.add(new Point(sx, sy));
 
-        if (e.getItem().is(Items.TOTEM_OF_UNDYING))
-            totemSlots.add(new Point(sx, sy));
+        if (!e.getItem().is(Items.TOTEM_OF_UNDYING))
+            return;
+
+        totemSlots.add(new Point(sx, sy));
     }
 
     @EventHandler
