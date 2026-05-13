@@ -158,8 +158,8 @@ public class GuiCursor extends Module implements Listener {
 
         int index = e.getIndex();
 
-        // Skip armor slots (5-8), crafting slots (0-4) — can never have totems
-        if (index < 9 || index > 44) return;
+        // skip if offhand slot
+        if (index > 44) return;
 
         int sx = e.getX() + 8;
         int sy = e.getY() + 8;
