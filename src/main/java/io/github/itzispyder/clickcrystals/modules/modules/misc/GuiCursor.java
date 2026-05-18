@@ -7,6 +7,7 @@ import io.github.itzispyder.clickcrystals.events.events.client.KeyPressEvent;
 import io.github.itzispyder.clickcrystals.events.events.client.RenderInventorySlotEvent;
 import io.github.itzispyder.clickcrystals.events.events.client.ScreenInitEvent;
 import io.github.itzispyder.clickcrystals.events.events.networking.PacketSendEvent;
+import io.github.itzispyder.clickcrystals.events.events.world.ClientTickStartEvent;
 import io.github.itzispyder.clickcrystals.mixininterfaces.AccessorMouseHandler;
 import io.github.itzispyder.clickcrystals.modules.Categories;
 import io.github.itzispyder.clickcrystals.modules.Module;
@@ -51,7 +52,9 @@ public class GuiCursor extends Module implements Listener {
 
     private final List<Point> totemSlots = new ArrayList<>();
     private final List<Point> allSlots = new ArrayList<>();
-    private int collectState = -1; // -1 idle, 0 waiting, 1 collecting
+    private int collectState = -1;     // collectState: -1 = idle, 0 = waiting for first render, 1 = collecting slots
+    private int retryTicks = 0;
+    private static final int MAX_RETRY_TICKS = 10;
     private boolean shiftKeyDown;
 
     public GuiCursor() {
@@ -61,49 +64,40 @@ public class GuiCursor extends Module implements Listener {
     @Override
     protected void onEnable() {
         system.addListener(this);
-        this.collectState = -1;
-        this.totemSlots.clear();
-        this.allSlots.clear();
+        reset();
     }
 
     @Override
     protected void onDisable() {
         system.removeListener(this);
-        this.collectState = -1;
-        this.totemSlots.clear();
-        this.allSlots.clear();
+        reset();
+    }
+
+    private void reset() {
+        collectState = -1;
+        retryTicks = 0;
+        totemSlots.clear();
+        allSlots.clear();
     }
 
     public static void setCursor(int x, int y) {
         Window win = mc.getWindow();
-        int w1 = win.getScreenWidth();
-        int w2 = win.getGuiScaledWidth();
-        int h1 = win.getScreenHeight();
-        int h2 = win.getGuiScaledHeight();
-        double ratW = (double) w2 / (double) w1;
-        double ratH = (double) h2 / (double) h1;
-        double rawX = x / ratW;
-        double rawY = y / ratH;
-        GLFW.glfwSetCursorPos(win.handle(), rawX, rawY);
+        double ratW = (double) win.getGuiScaledWidth() / win.getScreenWidth();
+        double ratH = (double) win.getGuiScaledHeight() / win.getScreenHeight();
+        GLFW.glfwSetCursorPos(win.handle(), x / ratW, y / ratH);
         // Update internal mouse state directly for Wayland compatibility,
         // where glfwSetCursorPos silently fails in normal cursor mode
-        ((AccessorMouseHandler) mc.mouseHandler).clickCrystals$setCursorPos(rawX, rawY);
+        ((AccessorMouseHandler) mc.mouseHandler).clickCrystals$setCursorPos(x / ratW, y / ratH);
     }
 
     public static double getCursorX(double x) {
         Window win = mc.getWindow();
-        int w1 = win.getScreenWidth();
-        int w2 = win.getGuiScaledWidth();
-        double ratW = (double) w2 / (double) w1;
-        return x * ratW;
+        return x * ((double) win.getGuiScaledWidth() / win.getScreenWidth());
     }
 
     public static double getCursorY(double y) {
         Window win = mc.getWindow();
-        int h1 = win.getScreenHeight();
-        int h2 = win.getGuiScaledHeight();
-        double ratH = (double) h2 / (double) h1;
-        return y * ratH;
+        return y * ((double) win.getGuiScaledHeight() / win.getScreenHeight());
     }
 
     public void centerFix() {
@@ -115,16 +109,16 @@ public class GuiCursor extends Module implements Listener {
         totemSlots.clear();
         allSlots.clear();
         collectState = 0;
-        system.scheduler.runDelayedTask(() -> {
-            pickAndMoveCursor();
-            totemSlots.clear();
-            allSlots.clear();
-            collectState = -1;
-        }, 50);
     }
 
     private void pickAndMoveCursor() {
-        if (totemSlots.isEmpty()) return;
+        if (totemSlots.isEmpty()) {
+            if (mc.screen instanceof InventoryScreen && retryTicks <= 0)
+                retryTicks = MAX_RETRY_TICKS;
+            return;
+        }
+
+        retryTicks = 0;
 
         boolean useClosest = cursorAction.getVal() == Mode.HOVER_TOTEM
                 && closestTotemSlot.getVal()
@@ -138,12 +132,31 @@ public class GuiCursor extends Module implements Listener {
 
         double cx = allSlots.stream().mapToInt(p -> p.x).average().orElse(0);
         double cy = allSlots.stream().mapToInt(p -> p.y).average().orElse(0);
-
-        Point chosen = totemSlots.stream()
+        Point closest = totemSlots.stream()
                 .min(Comparator.comparingDouble(p -> Math.hypot(p.x - cx, p.y - cy)))
                 .orElse(totemSlots.getFirst());
+        setCursor(closest.x, closest.y);
+    }
 
-        setCursor(chosen.x, chosen.y);
+    @EventHandler
+    private void onTick(ClientTickStartEvent e) {
+        // collectState 1 means render events fired last frame — all slots are collected, safe to pick
+        if (collectState == 1) {
+            collectState = -1;
+            if (mc.screen instanceof InventoryScreen)
+                pickAndMoveCursor();
+            totemSlots.clear();
+            allSlots.clear();
+            return;
+        }
+
+        if (retryTicks <= 0 || collectState != -1) return;
+        if (!(mc.screen instanceof InventoryScreen)) {
+            retryTicks = 0;
+            return;
+        }
+        retryTicks--;
+        hoverTotem();
     }
 
     @EventHandler
@@ -154,15 +167,7 @@ public class GuiCursor extends Module implements Listener {
 
     @EventHandler
     private void renderInventoryItem(RenderInventorySlotEvent e) {
-        if (collectState == -1) return;
-
-        int index = e.getIndex();
-
-        // skip if offhand slot
-        if (index > 44) return;
-
-        int sx = e.getX() + 8;
-        int sy = e.getY() + 8;
+        if (collectState == -1 || e.getIndex() > 44) return;
 
         if (collectState == 0) {
             totemSlots.clear();
@@ -170,51 +175,50 @@ public class GuiCursor extends Module implements Listener {
             collectState = 1;
         }
 
+        int sx = e.getX() + 8;
+        int sy = e.getY() + 8;
         allSlots.add(new Point(sx, sy));
-
-        if (!e.getItem().is(Items.TOTEM_OF_UNDYING))
-            return;
-
-        totemSlots.add(new Point(sx, sy));
+        if (e.getItem().is(Items.TOTEM_OF_UNDYING))
+            totemSlots.add(new Point(sx, sy));
     }
 
     @EventHandler
     private void onOpenScreen(ScreenInitEvent e) {
-        if (e.getScreen() instanceof InventoryScreen) {
-            switch (cursorAction.getVal()) {
-                case CENTER_FIX -> this.centerFix();
-                case HOVER_TOTEM -> this.hoverTotem();
-            }
+        if (!(e.getScreen() instanceof InventoryScreen)) return;
+        retryTicks = 0;
+        switch (cursorAction.getVal()) {
+            case CENTER_FIX -> centerFix();
+            case HOVER_TOTEM -> hoverTotem();
         }
     }
 
     @EventHandler
     private void onClick(PacketSendEvent e) {
-        if (e.getPacket() instanceof ServerboundContainerClickPacket packet) {
-            ItemStack stack = InvUtils.inv().getItem(packet.slotNum());
-            boolean clickedTotem = mc.screen instanceof InventoryScreen && stack.is(Items.TOTEM_OF_UNDYING) && totemShiftHolder.getVal();
-            boolean actionMatches = !shiftKeyDown && packet.containerInput() == ContainerInput.PICKUP;
+        if (!(e.getPacket() instanceof ServerboundContainerClickPacket packet)) return;
 
-            if (clickedTotem && actionMatches) {
-                int slot = packet.slotNum();
-                boolean offEmpty = HotbarUtils.getHand(InteractionHand.OFF_HAND).isEmpty();
-                boolean mainEmpty = !HotbarUtils.has(Items.TOTEM_OF_UNDYING);
-                boolean slotValid = !InvUtils.isOffhand(slot) && !InvUtils.isHotbar(slot);
+        ItemStack stack = InvUtils.inv().getItem(packet.slotNum());
+        boolean clickedTotem = mc.screen instanceof InventoryScreen
+                && stack.is(Items.TOTEM_OF_UNDYING)
+                && totemShiftHolder.getVal();
+        boolean actionMatches = !shiftKeyDown && packet.containerInput() == ContainerInput.PICKUP;
 
-                if (offEmpty && slotValid) {
-                    e.cancel();
-                    InvUtils.swapOffhand(slot);
-                    InvUtils.inv().tick();
+        if (!clickedTotem || !actionMatches) return;
 
-                    if (mainEmpty) {
-                        system.scheduler.runDelayedTask(this::hoverTotem, 50);
-                    }
-                } else if (slotValid) {
-                    e.cancel();
-                    InvUtils.quickMove(slot);
-                    InvUtils.inv().tick();
-                }
-            }
+        int slot = packet.slotNum();
+        boolean offEmpty = HotbarUtils.getHand(InteractionHand.OFF_HAND).isEmpty();
+        boolean mainEmpty = !HotbarUtils.has(Items.TOTEM_OF_UNDYING);
+        boolean slotValid = !InvUtils.isOffhand(slot) && !InvUtils.isHotbar(slot);
+
+        if (offEmpty && slotValid) {
+            e.cancel();
+            InvUtils.swapOffhand(slot);
+            InvUtils.inv().tick();
+            if (mainEmpty)
+                system.scheduler.runDelayedTask(this::hoverTotem, 50);
+        } else if (slotValid) {
+            e.cancel();
+            InvUtils.quickMove(slot);
+            InvUtils.inv().tick();
         }
     }
 
