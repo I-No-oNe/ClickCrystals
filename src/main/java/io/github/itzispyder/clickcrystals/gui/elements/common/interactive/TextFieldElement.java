@@ -38,8 +38,8 @@ public class TextFieldElement extends GuiElement implements Typeable {
     private String styledContent;
     private boolean selectionBlinking, selectedAll;
     private int selectionBlink;
-    private final ArrayDeque<String> undoStack = new ArrayDeque<>();
-    private final ArrayDeque<String> redoStack = new ArrayDeque<>();
+    private final ArrayDeque<Pair<String, Integer>> undoStack = new ArrayDeque<>();
+    private final ArrayDeque<Pair<String, Integer>> redoStack = new ArrayDeque<>();
     private int preferredCol = -1;
     private int dragAnchor = -1;
     private Function<Integer, Boolean> keyInterceptor;
@@ -99,7 +99,8 @@ public class TextFieldElement extends GuiElement implements Typeable {
 
     private void deleteRange() {
         pushUndo();
-        int lo = selMin(), hi = selMax();
+        int lo = selectedAll ? 0              : selMin();
+        int hi = selectedAll ? content.length() : selMax();
         content = content.substring(0, lo) + content.substring(hi);
         selectionStart = selectionEnd = lo;
         selectedAll = false;
@@ -108,8 +109,8 @@ public class TextFieldElement extends GuiElement implements Typeable {
     }
 
     private void pushUndo() {
-        if (!undoStack.isEmpty() && undoStack.peek().equals(content)) return;
-        undoStack.push(content);
+        if (!undoStack.isEmpty() && undoStack.peek().left.equals(content)) return;
+        undoStack.push(Pair.of(content, selectionStart));
         redoStack.clear();
         while (undoStack.size() > UNDO_LIMIT) undoStack.removeLast();
     }
@@ -233,9 +234,10 @@ public class TextFieldElement extends GuiElement implements Typeable {
                 }
                 case GLFW.GLFW_KEY_Z -> {
                     if (!undoStack.isEmpty()) {
-                        redoStack.push(content);
-                        content = undoStack.pop();
-                        selectionStart = selectionEnd = MathUtils.clamp(selectionStart, 0, content.length());
+                        redoStack.push(Pair.of(content, selectionStart));
+                        Pair<String, Integer> state = undoStack.pop();
+                        content = state.left;
+                        selectionStart = selectionEnd = MathUtils.clamp(state.right, 0, content.length());
                         styledContent = style(content);
                         updateSelection();
                     }
@@ -244,9 +246,10 @@ public class TextFieldElement extends GuiElement implements Typeable {
                 }
                 case GLFW.GLFW_KEY_Y -> {
                     if (!redoStack.isEmpty()) {
-                        undoStack.push(content);
-                        content = redoStack.pop();
-                        selectionStart = selectionEnd = MathUtils.clamp(selectionStart, 0, content.length());
+                        undoStack.push(Pair.of(content, selectionStart));
+                        Pair<String, Integer> state = redoStack.pop();
+                        content = state.left;
+                        selectionStart = selectionEnd = MathUtils.clamp(state.right, 0, content.length());
                         styledContent = style(content);
                         updateSelection();
                     }

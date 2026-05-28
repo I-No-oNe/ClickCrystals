@@ -25,6 +25,8 @@ import java.util.function.Predicate;
 // @Format interact position <x> <y> <z>
 public class InteractCmd extends ScriptCommand implements ThenChainable {
 
+    public enum Target { ANY_BLOCK, ANY_ENTITY, NEAREST_BLOCK, NEAREST_ENTITY, POSITION }
+
     public InteractCmd() {
         super("interact");
     }

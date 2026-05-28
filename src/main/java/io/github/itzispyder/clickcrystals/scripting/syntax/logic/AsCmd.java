@@ -74,4 +74,6 @@ public class AsCmd extends ScriptCommand implements ThenChainable {
         currentReference = null;
         referencing = false;
     }
+
+    public enum Target { ANY_ENTITY, CLIENT, NEAREST_ENTITY, TARGET_ENTITY }
 }

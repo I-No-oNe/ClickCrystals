@@ -2,6 +2,8 @@ package io.github.itzispyder.clickcrystals.scripting.components;
 
 import io.github.itzispyder.clickcrystals.Global;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import io.github.itzispyder.clickcrystals.modules.Module;
 import io.github.itzispyder.clickcrystals.scripting.ScriptArgs;
@@ -31,6 +33,7 @@ public class Conditionals implements Global {
     // registry
 
     private static final Map<String, Conditional> registry = new HashMap<>();
+    private static final Map<String, Integer>    arity    = new HashMap<>();
 
     private static Conditional register(String name, Conditional conditional) {
         if (name != null && conditional != null && !name.isEmpty())
@@ -44,6 +47,10 @@ public class Conditionals implements Global {
 
     public static Set<String> registeredNames() {
         return Collections.unmodifiableSet(registry.keySet());
+    }
+
+    public static int getArity(String name) {
+        return arity.getOrDefault(name.toLowerCase(), -1);
     }
 
     public static ConditionEvaluationResult evaluate(Entity ref, ScriptArgs args, int beginIndex) {
@@ -443,5 +450,28 @@ public class Conditionals implements Global {
         INVISIBLE = register("invisible", ctx -> ctx.end(true, ctx.entity.isInvisible()));
         INVENTORY_SLOT = register("inventory_slot", new ConditionalInventorySlot());
         FACING = register("facing", ctx -> ctx.end(true, ctx.entity.getNearestViewDirection() == ctx.get(0).toEnum(Direction.class)));
+
+        // Arity: number of tokens each conditional consumes before the inline command / block opener.
+        for (String s : List.of("true","false","alive","blocking","colliding","colliding_horizontally",
+                "colliding_vertically","dead","falling","flying","frozen","gliding","in_game",
+                "in_screen","in_singleplayer","invisible","jumping","line_of_sight","moving",
+                "on_fire","on_ground","playing","sneaking","sprinting","swimming",
+                "targeting_block","targeting_entity","targeting_fluid"))
+            arity.put(s, 0);
+        for (String s : List.of("chance_of","cursor_item","dimension","equipment_has","facing",
+                "gamemode","holding","hotbar_has","hovering_over","input_active","inventory_has",
+                "module_disabled","module_enabled","off_holding","reference_entity",
+                "target_block","target_block_face","target_entity","target_fluid"))
+            arity.put(s, 1);
+        for (String s : List.of("armor","attack_progress","block_in_fov","block_in_range",
+                "entity_in_fov","entity_in_range","fps","health","hunger","hurt_time",
+                "inventory_slot","ping","pos_x","pos_y","pos_z","rot_x","rot_y",
+                "vel_x","vel_y","vel_z"))
+            arity.put(s, 2);
+        for (String s : List.of("effect_amplifier","effect_duration","hotbar_count",
+                "inventory_count","item_cooldown","item_count","item_durability"))
+            arity.put(s, 3);
+        arity.put("block",  4);
+        arity.put("entity", 4);
     }
 }
