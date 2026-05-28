@@ -34,20 +34,24 @@ public class ClickScriptAutocomplete implements Global {
     private static final int COLOR_TEXT = 0xFFAAAAAA;
     private static final int COLOR_HIGHLIGHT = 0xFFFFFFFF;
 
-    private static final List<String> COMMANDS, EVENT_TYPES, CONDITIONALS, MODULE_ACTIONS, CONFIG_TYPES, DEFINE_TYPES, INPUT_TYPES, TARGET_TYPES, DIMENSIONS;
+    private static final List<String> COMMANDS, EVENT_TYPES, CONDITIONALS, MODULE_ACTIONS,
+                                      CONFIG_TYPES, DEFINE_TYPES, INPUT_TYPES, TARGET_TYPES,
+                                      DIMENSIONS, AS_TYPES, SNAP_TYPES;
     private static final Set<String> COMMAND_SET;
 
     static {
-        COMMANDS = sorted(Arrays.asList(ClickScript.collectNames()));
-        COMMAND_SET = new HashSet<>(COMMANDS);
-        EVENT_TYPES = enumValues(OnEventCmd.EventType.class);
-        CONDITIONALS = sorted(new ArrayList<>(Conditionals.registeredNames()));
+        COMMANDS       = sorted(Arrays.asList(ClickScript.collectNames()));
+        COMMAND_SET    = new HashSet<>(COMMANDS);
+        EVENT_TYPES    = enumValues(OnEventCmd.EventType.class);
+        CONDITIONALS   = sorted(new ArrayList<>(Conditionals.registeredNames()));
         MODULE_ACTIONS = enumValues(ModuleCmd.Action.class);
-        CONFIG_TYPES = enumValues(ConfigCmd.Type.class);
-        DEFINE_TYPES = enumValues(DefineCmd.Type.class);
-        INPUT_TYPES = enumValues(InputType.class);
-        TARGET_TYPES = enumValues(TargetType.class);
-        DIMENSIONS = enumValues(Dimensions.class);
+        CONFIG_TYPES   = enumValues(ConfigCmd.Type.class);
+        DEFINE_TYPES   = enumValues(DefineCmd.Type.class);
+        INPUT_TYPES    = enumValues(InputType.class);
+        TARGET_TYPES   = enumValues(TargetType.class);
+        DIMENSIONS     = enumValues(Dimensions.class);
+        AS_TYPES       = sorted(List.of("any_entity", "client", "nearest_entity", "target_entity"));
+        SNAP_TYPES     = sorted(List.of("any_block", "any_entity", "nearest_block", "nearest_entity", "polar", "position", "target_entity"));
     }
 
     private final List<String> suggestions = new ArrayList<>();
@@ -91,8 +95,9 @@ public class ClickScriptAutocomplete implements Global {
     private List<String> resolvePool(String[] tokens, int tokenIdx) {
         if (tokenIdx == 0) return COMMANDS;
         String cmd = tokens[0].toLowerCase();
-        if (cmd.equals("on")) return tokenIdx == 1 ? EVENT_TYPES : List.of();
-        if (cmd.equals("if") || cmd.equals("if_not")) return resolveIfPool(tokens, tokenIdx);
+        if (cmd.equals("on"))                              return tokenIdx == 1 ? EVENT_TYPES : List.of();
+        if (cmd.equals("if") || cmd.equals("if_not"))     return resolveIfPool(tokens, tokenIdx);
+        if (cmd.equals("while") || cmd.equals("while_not")) return resolveWhilePool(tokens, tokenIdx);
         return firstArgPool(cmd, tokenIdx);
     }
 
@@ -111,17 +116,32 @@ public class ClickScriptAutocomplete implements Global {
         return COMMANDS;
     }
 
+    // "while"/"while_not": while <num>? <conditional> {}
+    // The repeat count is optional, so the conditional may be at token 1 or 2.
+    private List<String> resolveWhilePool(String[] tokens, int tokenIdx) {
+        if (tokenIdx == 1) return CONDITIONALS;
+        if (tokenIdx == 2 && isNumber(tokens[1])) return CONDITIONALS;
+        return List.of();
+    }
+
+    private static boolean isNumber(String s) {
+        try { Double.parseDouble(s); return true; } catch (NumberFormatException e) { return false; }
+    }
+
     // Returns the first-argument suggestion pool for a command, or nothing for any other position.
     private static List<String> firstArgPool(String cmd, int idx) {
         if (idx != 1) return List.of();
         return switch (cmd) {
-            case "module" -> MODULE_ACTIONS;
-            case "config" -> CONFIG_TYPES;
-            case "define", "def" -> DEFINE_TYPES;
+            case "module"                               -> MODULE_ACTIONS;
+            case "config"                               -> CONFIG_TYPES;
+            case "define", "def"                       -> DEFINE_TYPES;
             case "input", "hold_input", "toggle_input" -> INPUT_TYPES;
-            case "interact" -> TARGET_TYPES;
-            case "dimension" -> DIMENSIONS;
-            default -> List.of();
+            case "interact"                            -> TARGET_TYPES;
+            case "dimension"                           -> DIMENSIONS;
+            case "as"                                  -> AS_TYPES;
+            case "snap_to", "turn_to"                 -> SNAP_TYPES;
+            case "while", "while_not"                  -> CONDITIONALS;
+            default                                    -> List.of();
         };
     }
 
