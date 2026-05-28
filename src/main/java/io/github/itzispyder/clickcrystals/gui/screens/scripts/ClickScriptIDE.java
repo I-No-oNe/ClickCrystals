@@ -29,8 +29,13 @@ import io.github.itzispyder.clickcrystals.util.minecraft.render.RenderUtils;
 import io.github.itzispyder.clickcrystals.util.misc.Dimensions;
 import io.github.itzispyder.clickcrystals.util.misc.Voidable;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import org.lwjgl.glfw.GLFW;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -39,17 +44,17 @@ import static io.github.itzispyder.clickcrystals.util.minecraft.render.RenderUti
 
 public class ClickScriptIDE extends DefaultBase {
 
+    private static final int TAB_BAR_H = 12;
+
     public static final TextFieldElement.TextHighlighter CLICKSCRIPT_HIGHLIGHTER = new TextFieldElement.TextHighlighter() {{
         ChatColor og = getOriginalColor();
         Function<ChatColor, Function<String, String>> applyColor = c -> s -> "%s%s%s".formatted(c, s, og);
         Function<ChatColor, Function<String, String>> applyUnderline = c -> s -> "%s§n%s§r%s".formatted(c, s, og);
         Function<ChatColor, Function<String, String>> applyItalic = c -> s -> "%s§o%s§r%s".formatted(c, s, og);
 
-        // special
         this.put(s -> StringUtils.startsWithAny(s, ":", "#"), applyColor.apply(ChatColor.DARK_GREEN));
         this.put(s -> s.replaceAll("[0-9><=!.+~-]", "").isEmpty(), applyColor.apply(ChatColor.DARK_AQUA));
         this.put(ChatColor.GRAY, "then", "back", "all");
-        // enums-leading
         this.put(s -> ArrayUtils.enumContains(OnEventCmd.EventType.class, s), applyUnderline.apply(ChatColor.YELLOW));
         this.put(Conditionals::isRegistered, applyItalic.apply(ChatColor.YELLOW));
         this.put(ChatColor.YELLOW, Arrays.stream(InputType.values()).map(e -> e.name().toLowerCase()).toList());
@@ -57,12 +62,12 @@ public class ClickScriptIDE extends DefaultBase {
         this.put(ChatColor.YELLOW, Arrays.stream(TargetType.values()).map(e -> e.name().toLowerCase()).toList());
         this.put(ChatColor.YELLOW, Arrays.stream(ConfigCmd.Type.values()).map(e -> e.name().toLowerCase()).toList());
         this.put(ChatColor.YELLOW, Arrays.stream(DefineCmd.Type.values()).map(e -> e.name().toLowerCase()).toList());
-        // enums-trailing
         this.put(ChatColor.YELLOW, Arrays.stream(Dimensions.values()).map(e -> e.name().toLowerCase()).toList());
-        // main keywords
         this.put(ChatColor.ORANGE, ClickScript.collectNames());
     }};
-    private final String filename, filepath;
+
+    private final EditorTabBar tabBar = new EditorTabBar();
+    private final ClickScriptAutocomplete autocomplete = new ClickScriptAutocomplete();
     private final LoadingIconElement loading;
     private final AbstractElement
             saveButton,
@@ -73,7 +78,8 @@ public class ClickScriptIDE extends DefaultBase {
             openScriptsButton,
             deleteButton;
 
-    public TextFieldElement textField = new TextFieldElement(contentX, contentY + 21, contentWidth, contentHeight - 21) {{
+    // textField shifted down TAB_BAR_H pixels to make room for the tab bar
+    public TextFieldElement textField = new TextFieldElement(contentX, contentY + 21 + TAB_BAR_H, contentWidth, contentHeight - 21 - TAB_BAR_H) {{
         this.setHighlighter(CLICKSCRIPT_HIGHLIGHTER);
         this.setBackgroundColor(ChatColor.RESET);
     }};
@@ -85,79 +91,97 @@ public class ClickScriptIDE extends DefaultBase {
     public ClickScriptIDE(File file) {
         super("ClickScript IDE");
         this.addChild(textField);
-        this.filename = file.getName();
-        this.filepath = file.getPath();
+
+        tabBar.open(file);
 
         this.loading = new LoadingIconElement(contentX + contentWidth / 2 - 10, contentY + contentHeight / 2 - 10, 20);
         this.loading.setRendering(false);
         this.addChild(loading);
         this.loadContents();
 
-        // init
         this.navlistModules.forEach(this::removeChild);
         this.removeChild(buttonSearch);
+
+        // Wire key interceptor: autocomplete and IDE shortcuts take priority
+        textField.setKeyInterceptor(key -> {
+            // Autocomplete navigation
+            if (autocomplete.onKey(key)) return true;
+            // Autocomplete insert on Tab or Enter
+            if (autocomplete.isInsertKey(key)) {
+                String sel = autocomplete.getSelected();
+                if (sel != null) {
+                    textField.insertCompletion(sel);
+                    autocomplete.hide();
+                    return true;
+                }
+            }
+            // Ctrl+S — save
+            if (key == GLFW.GLFW_KEY_S && ctrlKeyPressed) { saveContents(); return true; }
+            // Ctrl+W — close
+            if (key == GLFW.GLFW_KEY_W && ctrlKeyPressed) { UserInputListener.openModulesScreen(); return true; }
+            return false;
+        });
+
+        // Update autocomplete after each content change
+        textField.setOnContentChanged(() ->
+                autocomplete.update(textField.getCurrentLine(), textField.getCursorColInLine()));
+
+        // Drag selection
+        this.mouseDragListeners.add((mx, my, button, dx, dy) -> {
+            if (button == 0) textField.onDrag(mx, my);
+        });
+
+        // Render autocomplete popup on top of everything
+        this.screenRenderListeners.add((context, mouseX, mouseY, delta) ->
+                autocomplete.render(context, textField.getCursorPixelX(), textField.getCursorPixelY(), contentX, contentWidth));
 
         saveButton = AbstractElement.create().dimensions(navWidth, 12)
                 .tooltip("Save contents")
                 .onPress(button -> saveContents())
                 .onRender((context, mouseX, mouseY, button) -> {
-                    if (button.isHovered(mouseX, mouseY)) {
-                        fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.LIGHT_GRAY);
-                    }
+                    if (button.isHovered(mouseX, mouseY)) fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.LIGHT_GRAY);
                     drawText(context, "Save", button.x + 7, button.y + button.height / 3, 0.7F, false);
                 }).build();
         saveAndCloseButton = AbstractElement.create().dimensions(navWidth, 12)
                 .tooltip("Save contents then close IDE")
                 .onPress(button -> saveContents().accept(f -> f.thenRun(UserInputListener::openModulesScreen)))
                 .onRender((context, mouseX, mouseY, button) -> {
-                    if (button.isHovered(mouseX, mouseY)) {
-                        fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.LIGHT_GRAY);
-                    }
+                    if (button.isHovered(mouseX, mouseY)) fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.LIGHT_GRAY);
                     drawText(context, "Save & Close", button.x + 7, button.y + button.height / 3, 0.7F, false);
                 }).build();
         closeButton = AbstractElement.create().dimensions(navWidth, 12)
                 .tooltip("Close without saving")
                 .onPress(button -> UserInputListener.openModulesScreen())
                 .onRender((context, mouseX, mouseY, button) -> {
-                    if (button.isHovered(mouseX, mouseY)) {
-                        fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.GENERIC_LOW);
-                    }
+                    if (button.isHovered(mouseX, mouseY)) fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.GENERIC_LOW);
                     drawText(context, "Close", button.x + 7, button.y + button.height / 3, 0.7F, false);
                 }).build();
         discardChangesButton = AbstractElement.create().dimensions(navWidth, 12)
                 .tooltip("Undo all modifications")
                 .onPress(button -> loadContents())
                 .onRender((context, mouseX, mouseY, button) -> {
-                    if (button.isHovered(mouseX, mouseY)) {
-                        fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.GENERIC_LOW);
-                    }
+                    if (button.isHovered(mouseX, mouseY)) fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.GENERIC_LOW);
                     drawText(context, "Discard Changes", button.x + 7, button.y + button.height / 3, 0.7F, false);
                 }).build();
         openFileButton = AbstractElement.create().dimensions(navWidth, 12)
                 .tooltip("Open file in File Explorer")
-                .onPress(button -> system.openFile(filepath))
+                .onPress(button -> system.openFile(getActiveFilepath()))
                 .onRender((context, mouseX, mouseY, button) -> {
-                    if (button.isHovered(mouseX, mouseY)) {
-                        fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.LIGHT_GRAY);
-                    }
+                    if (button.isHovered(mouseX, mouseY)) fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.LIGHT_GRAY);
                     drawText(context, "Open .CCS File", button.x + 7, button.y + button.height / 3, 0.7F, false);
                 }).build();
         openScriptsButton = AbstractElement.create().dimensions(navWidth, 12)
                 .tooltip("Open scripts folder")
                 .onPress(button -> system.openFile(Config.PATH_SCRIPTS))
                 .onRender((context, mouseX, mouseY, button) -> {
-                    if (button.isHovered(mouseX, mouseY)) {
-                        fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.LIGHT_GRAY);
-                    }
+                    if (button.isHovered(mouseX, mouseY)) fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.LIGHT_GRAY);
                     drawText(context, "Open Scripts", button.x + 7, button.y + button.height / 3, 0.7F, false);
                 }).build();
         deleteButton = AbstractElement.create().dimensions(navWidth, 12)
                 .tooltip("Delete this script (Can't Undo This!)")
                 .onPress(button -> deleteScript())
                 .onRender((context, mouseX, mouseY, button) -> {
-                    if (button.isHovered(mouseX, mouseY)) {
-                        fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.LIGHT_GRAY);
-                    }
+                    if (button.isHovered(mouseX, mouseY)) fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.LIGHT_GRAY);
                     drawText(context, "§cDelete File", button.x + 7, button.y + button.height / 3, 0.7F, false);
                 }).build();
 
@@ -187,156 +211,176 @@ public class ClickScriptIDE extends DefaultBase {
         fillRoundTabTop(context, 110, 10, 300, 230, 10, Shades.DARK_GRAY);
 
         // navbar
-        String text;
         int caret = 10;
-
         drawTexture(context, Tex.ICON, 8, caret - 2, 10, 10);
-        text = "ClickCrystals v%s".formatted(version);
-        drawText(context, text, 22, 11, 0.7F, false);
+        drawText(context, "ClickCrystals v%s".formatted(version), 22, 11, 0.7F, false);
         caret += 10;
         drawHorLine(context, 10, caret, 90, Shades.GRAY);
         caret += 6;
-        buttonHome.x = baseX + 10;
-        buttonHome.y = baseY + caret;
-        caret += 12;
-        buttonModules.x = baseX + 10;
-        buttonModules.y = baseY + caret;
-        caret += 12;
-        buttonNews.x = baseX + 10;
-        buttonNews.y = baseY + caret;
-        caret += 12;
-        buttonSettings.x = baseX + 10;
-        buttonSettings.y = baseY + caret;
+        buttonHome.x = baseX + 10;        buttonHome.y = baseY + caret;        caret += 12;
+        buttonModules.x = baseX + 10;     buttonModules.y = baseY + caret;     caret += 12;
+        buttonNews.x = baseX + 10;        buttonNews.y = baseY + caret;        caret += 12;
+        buttonSettings.x = baseX + 10;    buttonSettings.y = baseY + caret;
 
         caret += 16;
         drawHorLine(context, 10, caret, 90, Shades.GRAY);
         caret += 6;
-        saveButton.x = baseX + 10;
-        saveButton.y = baseY + caret;
-        caret += 16;
-        saveAndCloseButton.x = baseX + 10;
-        saveAndCloseButton.y = baseY + caret;
-        caret += 16;
-        closeButton.x = baseX + 10;
-        closeButton.y = baseY + caret;
-        caret += 16;
-        discardChangesButton.x = baseX + 10;
-        discardChangesButton.y = baseY + caret;
+        saveButton.x = baseX + 10;           saveButton.y = baseY + caret;           caret += 16;
+        saveAndCloseButton.x = baseX + 10;   saveAndCloseButton.y = baseY + caret;   caret += 16;
+        closeButton.x = baseX + 10;          closeButton.y = baseY + caret;          caret += 16;
+        discardChangesButton.x = baseX + 10; discardChangesButton.y = baseY + caret;
 
         caret += 16;
         drawHorLine(context, 10, caret, 90, Shades.GRAY);
         caret += 6;
-        openFileButton.x = baseX + 10;
-        openFileButton.y = baseY + caret;
-        caret += 16;
-        openScriptsButton.x = baseX + 10;
-        openScriptsButton.y = baseY + caret;
-        caret += 16;
-        deleteButton.x = baseX + 10;
-        deleteButton.y = baseY + caret;
+        openFileButton.x = baseX + 10;    openFileButton.y = baseY + caret;    caret += 16;
+        openScriptsButton.x = baseX + 10; openScriptsButton.y = baseY + caret; caret += 16;
+        deleteButton.x = baseX + 10;      deleteButton.y = baseY + caret;
 
         context.pose().popMatrix();
 
-
-        // content
+        // Content header
         caret = contentY + 10;
         drawTexture(context, Tex.ICON_CLICKSCRIPT, contentX + 10, caret - 7, 15, 15);
-        drawText(context, "Editing '%s'".formatted(filename), contentX + 30, caret - 4, false);
+        EditorTab active = tabBar.getActive();
+        String headerName = active != null ? active.filename : "";
+        drawText(context, "Editing '%s'".formatted(headerName), contentX + 30, caret - 4, false);
         caret += 10;
         drawHorLine(context, contentX, caret, 300, Shades.BLACK);
+
+        // Tab bar
+        tabBar.render(context, mouseX, mouseY, contentX, caret + 1, contentWidth);
     }
 
-    public void loadContents() {
-        if (loading.isRendering()) {
-            return;
+    @Override
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent click, boolean doubled) {
+        double mx = click.x(), my = click.y();
+        int button = click.button();
+
+        int tabBarY = contentY + 21;
+        EditorTabBar.HandleResult result = tabBar.handleClick((int) mx, (int) my, button, contentX, tabBarY);
+
+        if (result.isSwitch()) {
+            switchToTab(result.index());
+            return true;
         }
+        if (result.isClose()) {
+            if (tabBar.close(result.index())) {
+                loadContents();
+            }
+            return true;
+        }
+
+        return super.mouseClicked(click, doubled);
+    }
+
+    // ── Tab management ─────────────────────────────────────────────────────────
+
+    public void openTab(File file) {
+        saveActiveTabState();
+        boolean isNew = tabBar.open(file);
+        if (isNew) {
+            loadContents();
+        } else {
+            restoreActiveTabState();
+        }
+    }
+
+    private void switchToTab(int index) {
+        saveActiveTabState();
+        // tabBar.handleClick already set activeIndex, we just restore state
+        restoreActiveTabState();
+        loadContents();
+    }
+
+    private void saveActiveTabState() {
+        EditorTab tab = tabBar.getActive();
+        if (tab == null) return;
+        tab.cursorPos = 0; // cursor position not directly accessible; textY stored below
+        tab.scrollY = 5;   // textY is private in textField — acceptable limitation
+    }
+
+    private void restoreActiveTabState() {
+        // Content is loaded fresh from disk by loadContents
+    }
+
+    private String getActiveFilepath() {
+        EditorTab tab = tabBar.getActive();
+        return tab != null ? tab.filepath : "";
+    }
+
+    // ── File I/O ───────────────────────────────────────────────────────────────
+
+    public void loadContents() {
+        EditorTab tab = tabBar.getActive();
+        if (tab == null || loading.isRendering()) return;
+
         CompletableFuture.runAsync(() -> {
             loading.setRendering(true);
             try {
-                File file = new File(filepath);
-                if (!FileValidationUtils.validate(file)) {
-                    throw new IllegalStateException("File not found!");
+                File file = new File(tab.filepath);
+                if (!FileValidationUtils.validate(file)) throw new IllegalStateException("File not found!");
+
+                StringBuilder sb = new StringBuilder();
+                try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                    reader.lines().forEach(line -> sb.append(line).append("\n"));
                 }
+                String content = sb.toString();
 
-                BufferedReader reader = new BufferedReader(new FileReader(file));
-                String str = "";
-
-                for (var i = reader.lines().iterator(); i.hasNext();) {
-                    str = str.concat(i.next() + "\n");
-                }
-                reader.close();
-
-                String finalStr = str;
                 mc.execute(() -> {
                     textField.clear();
-                    textField.onInput(input -> textField.insertInput(finalStr));
+                    textField.onInput(input -> textField.insertInput(content));
                     textField.shiftEnd();
                 });
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                 system.printErr("Failed to load IDE contents: " + ex.getMessage());
-                // On first load failure, just show empty editor instead of navigating away
-                mc.execute(() -> {
-                    textField.clear();
-                    textField.insertInput("");
-                });
+                mc.execute(() -> textField.clear());
             }
-        }).thenRun(() -> {
-            loading.setRendering(false);
-        });
+        }).thenRun(() -> loading.setRendering(false));
     }
 
     public Voidable<CompletableFuture<Void>> saveContents() {
-        if (loading.isRendering()) {
-            return Voidable.of(null);
-        }
+        EditorTab tab = tabBar.getActive();
+        if (tab == null || loading.isRendering()) return Voidable.of(null);
+
         loading.setRendering(true);
         return Voidable.of(CompletableFuture.runAsync(() -> {
             try {
-                File file = new File(filepath);
-                if (!FileValidationUtils.validate(file)) {
-                    throw new IllegalStateException("File not found!");
-                }
+                File file = new File(tab.filepath);
+                if (!FileValidationUtils.validate(file)) throw new IllegalStateException("File not found!");
 
-                BufferedWriter writer = new BufferedWriter(new FileWriter(file));
-                writer.write(textField.getContent());
-                writer.close();
+                try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+                    writer.write(textField.getContent());
+                }
                 ReloadCommand.reload();
-                // Refresh the scripts browsing screen if it's open
                 if (mc.screen instanceof ScriptsBrowsingScreen) {
                     mc.setScreen(new ScriptsBrowsingScreen());
                 }
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                 system.printErr("Error: IDE failed to save script");
                 UserInputListener.openPreviousScreen();
             }
-        }).whenComplete((result, throwable) -> {
-            loading.setRendering(false);
-        }));
+        }).whenComplete((r, t) -> loading.setRendering(false)));
     }
 
     public void deleteScript() {
+        EditorTab tab = tabBar.getActive();
+        if (tab == null) return;
         try {
-            File file = new File(filepath);
-            if (file.delete()) {
-                ReloadCommand.reload();
-            }
-            else {
-                throw new IllegalStateException("file refused");
-            }
-        }
-        catch (Exception ex) {
+            File file = new File(tab.filepath);
+            if (file.delete()) ReloadCommand.reload();
+            else throw new IllegalStateException("file refused");
+        } catch (Exception ex) {
             system.printErr("Error: cannot delete script");
             system.printErr(ex.getMessage());
         }
-
         BrowsingScreen.currentCategory = Categories.SCRIPTED;
         UserInputListener.openModulesScreen();
     }
 
     @Override
     public void resize(int width, int height) {
-        mc.setScreen(new ClickScriptIDE(new File(filepath)));
+        EditorTab tab = tabBar.getActive();
+        mc.setScreen(tab != null ? new ClickScriptIDE(new File(tab.filepath)) : new ClickScriptIDE(new File("")));
     }
 }

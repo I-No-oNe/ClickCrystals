@@ -1,6 +1,8 @@
 package io.github.itzispyder.clickcrystals.scripting.components;
 
 import io.github.itzispyder.clickcrystals.Global;
+import java.util.Collections;
+import java.util.Set;
 import io.github.itzispyder.clickcrystals.modules.Module;
 import io.github.itzispyder.clickcrystals.scripting.ScriptArgs;
 import io.github.itzispyder.clickcrystals.scripting.ScriptArgsReader;
@@ -38,6 +40,10 @@ public class Conditionals implements Global {
 
     public static boolean isRegistered(String name) {
         return registry.containsKey(name.toLowerCase());
+    }
+
+    public static Set<String> registeredNames() {
+        return Collections.unmodifiableSet(registry.keySet());
     }
 
     public static ConditionEvaluationResult evaluate(Entity ref, ScriptArgs args, int beginIndex) {
