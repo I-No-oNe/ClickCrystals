@@ -23,17 +23,16 @@ import java.util.function.Predicate;
 
 public class TextFieldElement extends GuiElement implements Typeable {
 
-    private static final int UNDO_LIMIT   = 100;
+    private static final int UNDO_LIMIT = 100;
     private static final int GUTTER_COLOR = 0xFF4A5568;
-    private static final int SEL_COLOR    = 0xA07E75FF;
+    private static final int SEL_COLOR = 0xA07E75FF;
     private static final int CURSOR_COLOR = 0xE0FFFFFF;
 
     private TextHighlighter highlighter = new TextHighlighter();
     private ChatColor backgroundColor = ChatColor.BLACK;
     private ChatColor textColor = ChatColor.WHITE;
-    // selectionStart = caret; selectionEnd = selection anchor (== selectionStart when no range)
     private int selectionStart, selectionEnd;
-    private Point selectedStartPoint, selectedEndPoint;
+    private final Point selectedStartPoint;
     private int textY = 5, textHeight;
     private String content = "";
     private String styledContent;
@@ -46,13 +45,11 @@ public class TextFieldElement extends GuiElement implements Typeable {
     private Function<Integer, Boolean> keyInterceptor;
     private Runnable onStateChanged; // fires on any cursor/content change
 
-    // Cached row layout from last render — reused by pixelToContentPos and renderRangeHighlight
     private List<FormattedCharSequence> cachedRows = List.of();
 
     public TextFieldElement(String preText, int x, int y, int width, int height) {
         super(x, y, width, height);
         this.selectedStartPoint = new Point();
-        this.selectedEndPoint = new Point();
         this.content = preText;
         this.styledContent = style(content);
         this.resetSelection();
@@ -61,8 +58,6 @@ public class TextFieldElement extends GuiElement implements Typeable {
     public TextFieldElement(int x, int y, int width, int height) {
         this("", x, y, width, height);
     }
-
-    // ── Navigation helpers ────────────────────────────────────────────────────
 
     private int lineStart(int pos) {
         int i = Math.min(pos, content.length());
@@ -94,8 +89,13 @@ public class TextFieldElement extends GuiElement implements Typeable {
         return !selectedAll && selectionStart != selectionEnd;
     }
 
-    private int selMin() { return Math.min(selectionStart, selectionEnd); }
-    private int selMax() { return Math.max(selectionStart, selectionEnd); }
+    private int selMin() {
+        return Math.min(selectionStart, selectionEnd);
+    }
+
+    private int selMax() {
+        return Math.max(selectionStart, selectionEnd);
+    }
 
     private void deleteRange() {
         pushUndo();
@@ -113,8 +113,6 @@ public class TextFieldElement extends GuiElement implements Typeable {
         redoStack.clear();
         while (undoStack.size() > UNDO_LIMIT) undoStack.removeLast();
     }
-
-    // ── Input handling ────────────────────────────────────────────────────────
 
     @Override
     public void onChar(char chr) {
@@ -162,7 +160,7 @@ public class TextFieldElement extends GuiElement implements Typeable {
             case '(' -> ')';
             case '[' -> ']';
             case '{' -> '}';
-            default  -> 0;
+            default -> 0;
         };
     }
 
@@ -176,7 +174,7 @@ public class TextFieldElement extends GuiElement implements Typeable {
         pushUndo();
         content = content.substring(0, lo) + open + content.substring(lo, hi) + close + content.substring(hi);
         selectionStart = lo + 1;
-        selectionEnd   = hi + 1;
+        selectionEnd = hi + 1;
         selectedAll = false;
         styledContent = style(content);
         updateSelection();
@@ -205,15 +203,24 @@ public class TextFieldElement extends GuiElement implements Typeable {
         // Ctrl combos
         if (screen.ctrlKeyPressed) {
             switch (key) {
-                case GLFW.GLFW_KEY_A -> { selectedAll = true; preferredCol = -1; return true; }
+                case GLFW.GLFW_KEY_A -> {
+                    selectedAll = true;
+                    preferredCol = -1;
+                    return true;
+                }
                 case GLFW.GLFW_KEY_C -> {
                     if (selectedAll) mc.keyboardHandler.setClipboard(content);
                     else if (hasRange()) mc.keyboardHandler.setClipboard(content.substring(selMin(), selMax()));
                     return true;
                 }
                 case GLFW.GLFW_KEY_X -> {
-                    if (selectedAll) { mc.keyboardHandler.setClipboard(content); clear(); }
-                    else if (hasRange()) { mc.keyboardHandler.setClipboard(content.substring(selMin(), selMax())); deleteRange(); }
+                    if (selectedAll) {
+                        mc.keyboardHandler.setClipboard(content);
+                        clear();
+                    } else if (hasRange()) {
+                        mc.keyboardHandler.setClipboard(content.substring(selMin(), selMax()));
+                        deleteRange();
+                    }
                     preferredCol = -1;
                     return true;
                 }
@@ -266,9 +273,16 @@ public class TextFieldElement extends GuiElement implements Typeable {
                     pushUndo();
                     String newLine;
                     int delta;
-                    if (line.startsWith("// ")) { newLine = line.substring(3); delta = -3; }
-                    else if (line.startsWith("//")) { newLine = line.substring(2); delta = -2; }
-                    else { newLine = "// " + line; delta = 3; }
+                    if (line.startsWith("// ")) {
+                        newLine = line.substring(3);
+                        delta = -3;
+                    } else if (line.startsWith("//")) {
+                        newLine = line.substring(2);
+                        delta = -2;
+                    } else {
+                        newLine = "// " + line;
+                        delta = 3;
+                    }
                     content = content.substring(0, ls) + newLine + content.substring(le);
                     selectionStart = selectionEnd = MathUtils.clamp(selectionStart + delta, ls, ls + newLine.length());
                     styledContent = style(content);
@@ -291,7 +305,11 @@ public class TextFieldElement extends GuiElement implements Typeable {
                     return true;
                 }
                 case GLFW.GLFW_KEY_BACKSPACE -> {
-                    if (hasRange() || selectedAll) { deleteRange(); preferredCol = -1; return true; }
+                    if (hasRange() || selectedAll) {
+                        deleteRange();
+                        preferredCol = -1;
+                        return true;
+                    }
                     int wordStart = prevWordBoundary(selectionStart);
                     if (wordStart < selectionStart) {
                         pushUndo();
@@ -309,7 +327,11 @@ public class TextFieldElement extends GuiElement implements Typeable {
         // Basic keys
         switch (key) {
             case GLFW.GLFW_KEY_BACKSPACE -> {
-                if (hasRange() || selectedAll) { deleteRange(); preferredCol = -1; return true; }
+                if (hasRange() || selectedAll) {
+                    deleteRange();
+                    preferredCol = -1;
+                    return true;
+                }
                 // Smart delete: if cursor sits between an empty matching pair, delete both.
                 if (selectionStart > 0 && selectionStart < content.length()) {
                     char expectedClose = matchingClose(content.charAt(selectionStart - 1));
@@ -331,7 +353,11 @@ public class TextFieldElement extends GuiElement implements Typeable {
                 return true;
             }
             case GLFW.GLFW_KEY_DELETE -> {
-                if (hasRange() || selectedAll) { deleteRange(); preferredCol = -1; return true; }
+                if (hasRange() || selectedAll) {
+                    deleteRange();
+                    preferredCol = -1;
+                    return true;
+                }
                 onInput(input -> StringUtils.insertString(content, selectionStart + 1, null));
                 preferredCol = -1;
                 return true;
@@ -373,14 +399,20 @@ public class TextFieldElement extends GuiElement implements Typeable {
                 return true;
             }
             case GLFW.GLFW_KEY_LEFT -> {
-                if (hasRange() || selectedAll) { selectionStart = selectionEnd = selMin(); selectedAll = false; updateSelection(); }
-                else shiftLeft();
+                if (hasRange() || selectedAll) {
+                    selectionStart = selectionEnd = selMin();
+                    selectedAll = false;
+                    updateSelection();
+                } else shiftLeft();
                 preferredCol = -1;
                 return true;
             }
             case GLFW.GLFW_KEY_RIGHT -> {
-                if (hasRange() || selectedAll) { selectionStart = selectionEnd = selMax(); selectedAll = false; updateSelection(); }
-                else shiftRight();
+                if (hasRange() || selectedAll) {
+                    selectionStart = selectionEnd = selMax();
+                    selectedAll = false;
+                    updateSelection();
+                } else shiftRight();
                 preferredCol = -1;
                 return true;
             }
@@ -398,8 +430,14 @@ public class TextFieldElement extends GuiElement implements Typeable {
                 preferredCol = -1;
                 return true;
             }
-            case GLFW.GLFW_KEY_UP -> { navigateVertical(-1); return true; }
-            case GLFW.GLFW_KEY_DOWN -> { navigateVertical(1); return true; }
+            case GLFW.GLFW_KEY_UP -> {
+                navigateVertical(-1);
+                return true;
+            }
+            case GLFW.GLFW_KEY_DOWN -> {
+                navigateVertical(1);
+                return true;
+            }
         }
         return false;
     }
@@ -412,7 +450,10 @@ public class TextFieldElement extends GuiElement implements Typeable {
         String[] lines = content.split("\n", -1);
         int charPos = 0, curLine = 0;
         for (int i = 0; i < lines.length; i++) {
-            if (charPos + lines[i].length() >= selectionStart) { curLine = i; break; }
+            if (charPos + lines[i].length() >= selectionStart) {
+                curLine = i;
+                break;
+            }
             charPos += lines[i].length() + 1;
         }
 
@@ -423,8 +464,6 @@ public class TextFieldElement extends GuiElement implements Typeable {
         selectionStart = selectionEnd = targetPos;
         updateSelection();
     }
-
-    // ── Mouse ─────────────────────────────────────────────────────────────────
 
     @Override
     public void mouseClicked(double mouseX, double mouseY, int button) {
@@ -462,13 +501,15 @@ public class TextFieldElement extends GuiElement implements Typeable {
                 : cachedRows;
         int targetRow = MathUtils.clamp((int) ((mouseY - (y + textY)) / 9), 0, Math.max(0, rows.size() - 1));
 
-        // Walk content (unstyled) to find the content index at the start of targetRow.
-        // Using raw content avoids calling style() on every character (O(n) savings).
+
         int pos = 0, row = 0, rowStart = 0;
         while (pos <= content.length() && row < targetRow) {
             int next = pos + 1;
             List<FormattedCharSequence> r = mc.font.split(FormattedText.of(content.substring(0, next)), width - 25);
-            if (r.size() > row + 1) { row++; rowStart = next; }
+            if (r.size() > row + 1) {
+                row++;
+                rowStart = next;
+            }
             pos = next;
         }
 
@@ -481,13 +522,15 @@ public class TextFieldElement extends GuiElement implements Typeable {
             if (r.size() > targetRow + 1) break;
             double cx = r.isEmpty() ? 0 : mc.font.width(r.get(Math.min(targetRow, r.size() - 1)));
             double dist = Math.abs(cx - targetX);
-            if (dist <= bestDist) { bestDist = dist; best = p; }
+            if (dist <= bestDist) {
+                bestDist = dist;
+                best = p;
+            }
         }
 
         return MathUtils.clamp(best, 0, content.length());
     }
 
-    // ── Rendering ─────────────────────────────────────────────────────────────
 
     @Override
     public void onRender(GuiGraphicsExtractor context, int mouseX, int mouseY) {
@@ -499,7 +542,6 @@ public class TextFieldElement extends GuiElement implements Typeable {
         cachedRows = text;
         textHeight = text.size() * 9;
 
-        // Line number gutter — numbers only, no background fill
         int caret = y + textY;
         int lineCount = Math.max(1, text.size());
         for (int i = 0; i < lineCount; i++) {
@@ -507,10 +549,8 @@ public class TextFieldElement extends GuiElement implements Typeable {
             caret += 9;
         }
 
-        // Range selection highlight
         if (hasRange()) renderRangeHighlight(context, text);
 
-        // Full-select highlight
         if (selectedAll) {
             caret = y + textY;
             for (FormattedCharSequence line : text) {
@@ -519,14 +559,12 @@ public class TextFieldElement extends GuiElement implements Typeable {
             }
         }
 
-        // Text
         caret = y + textY;
         for (FormattedCharSequence line : text) {
             context.text(mc.font, line, x + 20, caret, textColor.getHex(), false);
             caret += 9;
         }
 
-        // Cursor
         if (selectionBlinking) {
             RenderUtils.drawVerLine(context, x + 20 + selectedStartPoint.x, y - 1 + textY + selectedStartPoint.y, 9, CURSOR_COLOR);
         }
@@ -537,19 +575,18 @@ public class TextFieldElement extends GuiElement implements Typeable {
 
     private void renderRangeHighlight(GuiGraphicsExtractor context, List<FormattedCharSequence> rows) {
         Point startPt = computePointFor(selMin());
-        Point endPt   = computePointFor(selMax());
-        int startRow  = startPt.y / 9;
-        int endRow    = endPt.y / 9;
+        Point endPt = computePointFor(selMax());
+        int startRow = startPt.y / 9;
+        int endRow = endPt.y / 9;
 
         for (int row = startRow; row <= endRow; row++) {
             int rx0 = (row == startRow) ? startPt.x : 0;
             int rx1 = (row == endRow) ? endPt.x : (row < rows.size() ? mc.font.width(rows.get(row)) : 0);
-            int ry  = y + textY - 1 + row * 9;
+            int ry = y + textY - 1 + row * 9;
             RenderUtils.fillRect(context, x + 20 + rx0, ry, Math.max(1, rx1 - rx0), 9, SEL_COLOR);
         }
     }
 
-    // Uses raw content (not styled) to avoid style() overhead — accurate enough for cursor positioning.
     private Point computePointFor(int pos) {
         String sub = content.substring(0, MathUtils.clamp(pos, 0, content.length()));
         List<FormattedCharSequence> lines = mc.font.split(FormattedText.of(sub), width - 25);
@@ -561,7 +598,10 @@ public class TextFieldElement extends GuiElement implements Typeable {
     public void onTick() {
         super.onTick();
         if (mc.screen instanceof GuiScreen screen) {
-            if (screen.selected != this) { selectionBlinking = false; return; }
+            if (screen.selected != this) {
+                selectionBlinking = false;
+                return;
+            }
             if (selectionBlink++ >= 20) selectionBlink = 0;
             if (selectionBlink % 10 == 0 && selectionBlink > 0) selectionBlinking = !selectionBlinking;
         }
@@ -569,14 +609,16 @@ public class TextFieldElement extends GuiElement implements Typeable {
 
     @Override
     public void onInput(Function<String, String> factory) {
-        if (selectedAll) { content = styledContent = ""; selectedAll = false; resetSelection(); }
+        if (selectedAll) {
+            content = styledContent = "";
+            selectedAll = false;
+            resetSelection();
+        }
         pushUndo();
         content = factory.apply(content);
         updateSelection();
         this.styledContent = style(content);
     }
-
-    // ── Cursor movement ───────────────────────────────────────────────────────
 
     public void shiftRight() {
         selectionStart = MathUtils.clamp(selectionStart + 1, 0, content.length());
@@ -614,7 +656,6 @@ public class TextFieldElement extends GuiElement implements Typeable {
         }
     }
 
-    // Pure text transformation — no side effects.
     public String style(String s) {
         if (s == null || s.isEmpty()) return " ";
         return highlighter.highlightText(s);
@@ -628,16 +669,18 @@ public class TextFieldElement extends GuiElement implements Typeable {
     public void updateSelection() {
         String str = content.substring(0, MathUtils.clamp(selectionStart, 0, content.length()));
         List<FormattedCharSequence> lines = mc.font.split(FormattedText.of(str), width - 25);
-        if (lines == null || lines.isEmpty()) { selectedStartPoint.setLocation(0, 0); return; }
+        if (lines == null || lines.isEmpty()) {
+            selectedStartPoint.setLocation(0, 0);
+            return;
+        }
         selectedStartPoint.x = mc.font.width(lines.get(Math.max(0, lines.size() - 1)));
         selectedStartPoint.y = lines.size() * 9 - 9;
     }
 
-    // ── Accessors for IDE ─────────────────────────────────────────────────────
-
     public String getWordBeforeCursor() {
         int start = selectionStart;
-        while (start > 0 && content.charAt(start - 1) != '\n' && !Character.isWhitespace(content.charAt(start - 1))) start--;
+        while (start > 0 && content.charAt(start - 1) != '\n' && !Character.isWhitespace(content.charAt(start - 1)))
+            start--;
         return content.substring(start, selectionStart);
     }
 
@@ -649,12 +692,18 @@ public class TextFieldElement extends GuiElement implements Typeable {
         return selectionStart - lineStart(selectionStart);
     }
 
-    public int getCursorPixelX() { return x + 20 + selectedStartPoint.x; }
-    public int getCursorPixelY() { return y + textY + selectedStartPoint.y; }
+    public int getCursorPixelX() {
+        return x + 20 + selectedStartPoint.x;
+    }
+
+    public int getCursorPixelY() {
+        return y + textY + selectedStartPoint.y;
+    }
 
     public void insertCompletion(String completion) {
         int wordStart = selectionStart;
-        while (wordStart > 0 && content.charAt(wordStart - 1) != '\n' && !Character.isWhitespace(content.charAt(wordStart - 1))) wordStart--;
+        while (wordStart > 0 && content.charAt(wordStart - 1) != '\n' && !Character.isWhitespace(content.charAt(wordStart - 1)))
+            wordStart--;
         pushUndo();
         content = content.substring(0, wordStart) + completion + content.substring(selectionStart);
         selectionStart = selectionEnd = wordStart + completion.length();
@@ -662,19 +711,37 @@ public class TextFieldElement extends GuiElement implements Typeable {
         updateSelection();
     }
 
-    // ── Getters / setters ─────────────────────────────────────────────────────
+    public String[] getLines() {
+        return content.lines().toArray(String[]::new);
+    }
 
-    public String[] getLines() { return content.lines().toArray(String[]::new); }
-    public String getContent() { return content; }
+    public String getContent() {
+        return content;
+    }
 
-    public ChatColor getBackgroundColor() { return backgroundColor; }
-    public void setBackgroundColor(ChatColor c) { this.backgroundColor = c; }
+    public ChatColor getBackgroundColor() {
+        return backgroundColor;
+    }
 
-    public ChatColor getTextColor() { return textColor; }
-    public void setTextColor(ChatColor c) { this.textColor = c; }
+    public void setBackgroundColor(ChatColor c) {
+        this.backgroundColor = c;
+    }
 
-    public TextHighlighter getHighlighter() { return highlighter; }
-    public void setHighlighter(TextHighlighter h) { this.highlighter = h; }
+    public ChatColor getTextColor() {
+        return textColor;
+    }
+
+    public void setTextColor(ChatColor c) {
+        this.textColor = c;
+    }
+
+    public TextHighlighter getHighlighter() {
+        return highlighter;
+    }
+
+    public void setHighlighter(TextHighlighter h) {
+        this.highlighter = h;
+    }
 
     public void setKeyInterceptor(Function<Integer, Boolean> interceptor) {
         this.keyInterceptor = interceptor;
@@ -699,14 +766,17 @@ public class TextFieldElement extends GuiElement implements Typeable {
         redoStack.clear();
     }
 
-    // ── TextHighlighter ───────────────────────────────────────────────────────
-
     public static class TextHighlighter {
         private List<HighlightFactory> stringFactories = new ArrayList<>();
         private ChatColor originalColor;
 
-        public TextHighlighter(ChatColor originalColor) { this.originalColor = originalColor; }
-        public TextHighlighter() { this(ChatColor.WHITE); }
+        public TextHighlighter(ChatColor originalColor) {
+            this.originalColor = originalColor;
+        }
+
+        public TextHighlighter() {
+            this(ChatColor.WHITE);
+        }
 
         public String highlightText(String text) {
             String[] lines = text.lines().toArray(String[]::new);
@@ -715,11 +785,17 @@ public class TextFieldElement extends GuiElement implements Typeable {
                 String[] words = lines[i].split(" ");
                 for (int j = 0; j < words.length; j++) {
                     String word = words[j];
-                    if (word.isEmpty()) { result.append(" "); continue; }
+                    if (word.isEmpty()) {
+                        result.append(" ");
+                        continue;
+                    }
                     String r = word;
                     for (HighlightFactory factory : stringFactories) {
                         Pair<String, Boolean> product = factory.process(r);
-                        if (product.right) { r = product.left; break; }
+                        if (product.right) {
+                            r = product.left;
+                            break;
+                        }
                     }
                     result.append(r).append(j < words.length - 1 ? " " : "");
                 }
@@ -737,12 +813,14 @@ public class TextFieldElement extends GuiElement implements Typeable {
         }
 
         public TextHighlighter put(ChatColor color, String... keys) {
-            for (String key : keys) if (key != null && !key.isEmpty()) stringFactories.add(colorStringFactory(color, key));
+            for (String key : keys)
+                if (key != null && !key.isEmpty()) stringFactories.add(colorStringFactory(color, key));
             return this;
         }
 
         public TextHighlighter put(ChatColor color, Iterable<String> keys) {
-            for (String key : keys) if (key != null && !key.isEmpty()) stringFactories.add(colorStringFactory(color, key));
+            for (String key : keys)
+                if (key != null && !key.isEmpty()) stringFactories.add(colorStringFactory(color, key));
             return this;
         }
 
@@ -756,10 +834,22 @@ public class TextFieldElement extends GuiElement implements Typeable {
             return this;
         }
 
-        public TextHighlighter setStringFactory(List<HighlightFactory> factories) { this.stringFactories = factories; return this; }
-        public void clearFactories() { stringFactories.clear(); }
-        public ChatColor getOriginalColor() { return originalColor; }
-        public void setOriginalColor(ChatColor c) { this.originalColor = c; }
+        public TextHighlighter setStringFactory(List<HighlightFactory> factories) {
+            this.stringFactories = factories;
+            return this;
+        }
+
+        public void clearFactories() {
+            stringFactories.clear();
+        }
+
+        public ChatColor getOriginalColor() {
+            return originalColor;
+        }
+
+        public void setOriginalColor(ChatColor c) {
+            this.originalColor = c;
+        }
 
         public record HighlightFactory(Predicate<String> predicate, Function<String, String> factory) {
             public Pair<String, Boolean> process(String str) {

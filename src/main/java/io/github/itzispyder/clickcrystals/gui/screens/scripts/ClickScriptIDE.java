@@ -49,9 +49,9 @@ public class ClickScriptIDE extends DefaultBase {
 
     public static final TextFieldElement.TextHighlighter CLICKSCRIPT_HIGHLIGHTER = new TextFieldElement.TextHighlighter() {{
         ChatColor og = getOriginalColor();
-        Function<ChatColor, Function<String, String>> applyColor    = c -> s -> "%s%s%s".formatted(c, s, og);
+        Function<ChatColor, Function<String, String>> applyColor = c -> s -> "%s%s%s".formatted(c, s, og);
         Function<ChatColor, Function<String, String>> applyUnderline = c -> s -> "%s§n%s§r%s".formatted(c, s, og);
-        Function<ChatColor, Function<String, String>> applyItalic   = c -> s -> "%s§o%s§r%s".formatted(c, s, og);
+        Function<ChatColor, Function<String, String>> applyItalic = c -> s -> "%s§o%s§r%s".formatted(c, s, og);
 
         this.put(s -> StringUtils.startsWithAny(s, ":", "#"), applyColor.apply(ChatColor.DARK_GREEN));
         this.put(s -> s.replaceAll("[0-9><=!.+~-]", "").isEmpty(), applyColor.apply(ChatColor.DARK_AQUA));
@@ -68,27 +68,26 @@ public class ClickScriptIDE extends DefaultBase {
     }};
 
     private static final List<Pair<String, String>> KEYBIND_ENTRIES = List.of(
-            Pair.of("Ctrl+S",   "Save"),
-            Pair.of("Ctrl+Z",   "Undo"),
-            Pair.of("Ctrl+Y",   "Redo"),
-            Pair.of("Ctrl+C",   "Copy"),
-            Pair.of("Ctrl+X",   "Cut"),
-            Pair.of("Ctrl+V",   "Paste"),
-            Pair.of("Ctrl+A",   "Select All"),
-            Pair.of("Ctrl+D",   "Duplicate Line"),
-            Pair.of("Ctrl+/",   "Toggle Comment"),
-            Pair.of("Tab",      "Autocomplete / Indent"),
-            Pair.of("Ctrl+←→",  "Word Jump"),
-            Pair.of("↑↓",       "Navigate Suggestions"),
-            Pair.of("Enter",    "Insert Suggestion"),
-            Pair.of("Escape",   "Dismiss")
+            Pair.of("Ctrl+S", "Save"),
+            Pair.of("Ctrl+Z", "Undo"),
+            Pair.of("Ctrl+Y", "Redo"),
+            Pair.of("Ctrl+C", "Copy"),
+            Pair.of("Ctrl+X", "Cut"),
+            Pair.of("Ctrl+V", "Paste"),
+            Pair.of("Ctrl+A", "Select All"),
+            Pair.of("Ctrl+D", "Duplicate Line"),
+            Pair.of("Ctrl+/", "Toggle Comment"),
+            Pair.of("Tab", "Autocomplete / Indent"),
+            Pair.of("Ctrl+←→", "Word Jump"),
+            Pair.of("↑↓", "Navigate Suggestions"),
+            Pair.of("Enter", "Insert Suggestion"),
+            Pair.of("Escape", "Dismiss")
     );
 
     private final ClickScriptAutocomplete autocomplete = new ClickScriptAutocomplete();
     private final LoadingIconElement loading;
-    private File currentFile;
+    private final File currentFile;
     private boolean showKeybinds = false;
-    // Bounds of the keybind modal — set during renderKeybindsModal, used for hit-testing in mouseClicked.
     private int kbPx, kbPy, kbPw, kbPh;
 
     public TextFieldElement textField = new TextFieldElement(contentX, contentY + 21, contentWidth, contentHeight - 21) {{
@@ -124,8 +123,10 @@ public class ClickScriptIDE extends DefaultBase {
         this.removeChild(buttonSearch);
 
         textField.setKeyInterceptor(key -> {
-            // Dismiss keybind modal first.
-            if (key == GLFW.GLFW_KEY_ESCAPE && showKeybinds) { showKeybinds = false; return true; }
+            if (key == GLFW.GLFW_KEY_ESCAPE && showKeybinds) {
+                showKeybinds = false;
+                return true;
+            }
             if (autocomplete.onKey(key)) return true;
             if (autocomplete.isInsertKey(key)) {
                 String sel = autocomplete.getSelected();
@@ -135,7 +136,10 @@ public class ClickScriptIDE extends DefaultBase {
                     return true;
                 }
             }
-            if (key == GLFW.GLFW_KEY_S && ctrlKeyPressed) { saveContents(); return true; }
+            if (key == GLFW.GLFW_KEY_S && ctrlKeyPressed) {
+                saveContents();
+                return true;
+            }
             return false;
         });
 
@@ -148,63 +152,71 @@ public class ClickScriptIDE extends DefaultBase {
 
         this.screenRenderListeners.add((context, mouseX, mouseY, delta) -> {
             autocomplete.render(context, textField.getCursorPixelX(), textField.getCursorPixelY(), contentX, contentWidth);
-            if (showKeybinds) renderKeybindsModal(context);
+            if (showKeybinds) renderKeybindsTooltip(context);
         });
 
         saveButton = AbstractElement.create().dimensions(navWidth, 12)
                 .tooltip("Save contents")
                 .onPress(button -> saveContents())
                 .onRender((context, mouseX, mouseY, button) -> {
-                    if (button.isHovered(mouseX, mouseY)) fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.LIGHT_GRAY);
+                    if (button.isHovered(mouseX, mouseY))
+                        fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.LIGHT_GRAY);
                     drawText(context, "Save", button.x + 7, button.y + button.height / 3, 0.7F, false);
                 }).build();
         saveAndCloseButton = AbstractElement.create().dimensions(navWidth, 12)
                 .tooltip("Save contents then close IDE")
                 .onPress(button -> saveContents().accept(f -> f.thenRun(UserInputListener::openModulesScreen)))
                 .onRender((context, mouseX, mouseY, button) -> {
-                    if (button.isHovered(mouseX, mouseY)) fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.LIGHT_GRAY);
+                    if (button.isHovered(mouseX, mouseY))
+                        fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.LIGHT_GRAY);
                     drawText(context, "Save & Close", button.x + 7, button.y + button.height / 3, 0.7F, false);
                 }).build();
         closeButton = AbstractElement.create().dimensions(navWidth, 12)
                 .tooltip("Close without saving")
                 .onPress(button -> UserInputListener.openModulesScreen())
                 .onRender((context, mouseX, mouseY, button) -> {
-                    if (button.isHovered(mouseX, mouseY)) fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.GENERIC_LOW);
+                    if (button.isHovered(mouseX, mouseY))
+                        fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.GENERIC_LOW);
                     drawText(context, "Close", button.x + 7, button.y + button.height / 3, 0.7F, false);
                 }).build();
         discardChangesButton = AbstractElement.create().dimensions(navWidth, 12)
                 .tooltip("Undo all modifications")
                 .onPress(button -> loadContents())
                 .onRender((context, mouseX, mouseY, button) -> {
-                    if (button.isHovered(mouseX, mouseY)) fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.GENERIC_LOW);
+                    if (button.isHovered(mouseX, mouseY))
+                        fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.GENERIC_LOW);
                     drawText(context, "Discard Changes", button.x + 7, button.y + button.height / 3, 0.7F, false);
                 }).build();
         keybindsButton = AbstractElement.create().dimensions(navWidth, 12)
                 .tooltip("Show keybind reference")
                 .onPress(button -> showKeybinds = !showKeybinds)
                 .onRender((context, mouseX, mouseY, button) -> {
-                    if (button.isHovered(mouseX, mouseY)) fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.LIGHT_GRAY);
+                    if (button.isHovered(mouseX, mouseY))
+                        fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.LIGHT_GRAY);
                     drawText(context, "Keybinds", button.x + 7, button.y + button.height / 3, 0.7F, false);
                 }).build();
         openFileButton = AbstractElement.create().dimensions(navWidth, 12)
                 .tooltip("Open file in File Explorer")
                 .onPress(button -> system.openFile(currentFile.getPath()))
                 .onRender((context, mouseX, mouseY, button) -> {
-                    if (button.isHovered(mouseX, mouseY)) fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.LIGHT_GRAY);
+                    if (button.isHovered(mouseX, mouseY))
+                        fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.LIGHT_GRAY);
                     drawText(context, "Open .CCS File", button.x + 7, button.y + button.height / 3, 0.7F, false);
                 }).build();
         openScriptsButton = AbstractElement.create().dimensions(navWidth, 12)
                 .tooltip("Open scripts folder")
                 .onPress(button -> system.openFile(Config.PATH_SCRIPTS))
                 .onRender((context, mouseX, mouseY, button) -> {
-                    if (button.isHovered(mouseX, mouseY)) fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.LIGHT_GRAY);
+                    if (button.isHovered(mouseX, mouseY))
+                        fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.LIGHT_GRAY);
                     drawText(context, "Open Scripts", button.x + 7, button.y + button.height / 3, 0.7F, false);
                 }).build();
         deleteButton = AbstractElement.create().dimensions(navWidth, 12)
                 .tooltip("Delete this script (Can't Undo This!)")
                 .onPress(button -> deleteScript())
                 .onRender((context, mouseX, mouseY, button) -> {
-                    if (button.isHovered(mouseX, mouseY)) fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.LIGHT_GRAY);
+                    if (button.isHovered(mouseX, mouseY))
+                        fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.LIGHT_GRAY);
                     drawText(context, "§cDelete File", button.x + 7, button.y + button.height / 3, 0.7F, false);
                 }).build();
 
@@ -239,33 +251,50 @@ public class ClickScriptIDE extends DefaultBase {
         caret += 10;
         drawHorLine(context, 10, caret, 90, Shades.GRAY);
         caret += 6;
-        buttonHome.x = baseX + 10;        buttonHome.y = baseY + caret;        caret += 12;
-        buttonModules.x = baseX + 10;     buttonModules.y = baseY + caret;     caret += 12;
-        buttonNews.x = baseX + 10;        buttonNews.y = baseY + caret;        caret += 12;
-        buttonSettings.x = baseX + 10;    buttonSettings.y = baseY + caret;
+        buttonHome.x = baseX + 10;
+        buttonHome.y = baseY + caret;
+        caret += 12;
+        buttonModules.x = baseX + 10;
+        buttonModules.y = baseY + caret;
+        caret += 12;
+        buttonNews.x = baseX + 10;
+        buttonNews.y = baseY + caret;
+        caret += 12;
+        buttonSettings.x = baseX + 10;
+        buttonSettings.y = baseY + caret;
 
-        // ── Save section ──────────────────────────────────────────────────────
         caret += 16;
         drawHorLine(context, 10, caret, 90, Shades.GRAY);
         caret += 6;
-        saveButton.x = baseX + 10;           saveButton.y = baseY + caret;           caret += 16;
-        saveAndCloseButton.x = baseX + 10;   saveAndCloseButton.y = baseY + caret;   caret += 16;
-        closeButton.x = baseX + 10;          closeButton.y = baseY + caret;          caret += 16;
-        discardChangesButton.x = baseX + 10; discardChangesButton.y = baseY + caret;
+        saveButton.x = baseX + 10;
+        saveButton.y = baseY + caret;
+        caret += 16;
+        saveAndCloseButton.x = baseX + 10;
+        saveAndCloseButton.y = baseY + caret;
+        caret += 16;
+        closeButton.x = baseX + 10;
+        closeButton.y = baseY + caret;
+        caret += 16;
+        discardChangesButton.x = baseX + 10;
+        discardChangesButton.y = baseY + caret;
 
-        // ── Keybinds section ──────────────────────────────────────────────────
         caret += 16;
         drawHorLine(context, 10, caret, 90, Shades.GRAY);
         caret += 6;
-        keybindsButton.x = baseX + 10;    keybindsButton.y = baseY + caret;
+        keybindsButton.x = baseX + 10;
+        keybindsButton.y = baseY + caret;
 
-        // ── File section ──────────────────────────────────────────────────────
         caret += 16;
         drawHorLine(context, 10, caret, 90, Shades.GRAY);
         caret += 6;
-        openFileButton.x = baseX + 10;    openFileButton.y = baseY + caret;    caret += 16;
-        openScriptsButton.x = baseX + 10; openScriptsButton.y = baseY + caret; caret += 16;
-        deleteButton.x = baseX + 10;      deleteButton.y = baseY + caret;
+        openFileButton.x = baseX + 10;
+        openFileButton.y = baseY + caret;
+        caret += 16;
+        openScriptsButton.x = baseX + 10;
+        openScriptsButton.y = baseY + caret;
+        caret += 16;
+        deleteButton.x = baseX + 10;
+        deleteButton.y = baseY + caret;
 
         context.pose().popMatrix();
 
@@ -280,54 +309,43 @@ public class ClickScriptIDE extends DefaultBase {
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent click, boolean doubled) {
         if (showKeybinds) {
             double mx = click.x(), my = click.y();
-            // Close button: top-right corner of the modal.
             boolean onClose = mx >= kbPx + kbPw - 18 && mx <= kbPx + kbPw
                     && my >= kbPy && my <= kbPy + 16;
             if (onClose || mx < kbPx || mx > kbPx + kbPw || my < kbPy || my > kbPy + kbPh) {
                 showKeybinds = false;
             }
-            return true; // consume all clicks while modal is open
+            return true;
         }
         return super.mouseClicked(click, doubled);
     }
 
-    // ── Keybind modal ─────────────────────────────────────────────────────────
-
-    private void renderKeybindsModal(GuiGraphicsExtractor context) {
-        final int TITLE_H  = 18;
-        final int ROW_H    = 10;
-        final int PADDING  = 6;
-        final int CLOSE_W  = 14;
+    private void renderKeybindsTooltip(GuiGraphicsExtractor context) {
+        final int TITLE_H = 18;
+        final int ROW_H = 10;
+        final int PADDING = 6;
+        final int CLOSE_W = 14;
         kbPw = 220;
         kbPh = TITLE_H + KEYBIND_ENTRIES.size() * ROW_H + PADDING * 2;
-        kbPx = windowWidth  / 2 - kbPw / 2;
+        kbPx = windowWidth / 2 - kbPw / 2;
         kbPy = windowHeight / 2 - kbPh / 2;
 
-        // Draw the same opaque background the IDE itself uses.
         renderOpaqueBackground(context);
 
-        // Modal background + CC blue glow border
         RenderUtils.fillRoundRect(context, kbPx, kbPy, kbPw, kbPh, 5, 0xF0141420);
-        RenderUtils.fillRoundShadow(context, kbPx, kbPy, kbPw, kbPh, 5, 1,  0xFF00B7FF, 0xFF00B7FF);
-        RenderUtils.fillRoundShadow(context, kbPx, kbPy, kbPw, kbPh, 5, 8,  0x4000B7FF, 0x0000B7FF);
+        RenderUtils.fillRoundShadow(context, kbPx, kbPy, kbPw, kbPh, 5, 1, 0xFF00B7FF, 0xFF00B7FF);
+        RenderUtils.fillRoundShadow(context, kbPx, kbPy, kbPw, kbPh, 5, 8, 0x4000B7FF, 0x0000B7FF);
 
-        // Title row
         drawText(context, "Keybinds", kbPx + PADDING, kbPy + 4, 0.9F, false);
-        // × close button (top-right)
         RenderUtils.drawDefaultScaledText(context, Component.literal("×"), kbPx + kbPw - CLOSE_W + 2, kbPy + 5, 0.9F, false, 0xFFCC4444);
-        // Separator under title
         drawHorLine(context, kbPx + PADDING, kbPy + TITLE_H - 2, kbPw - PADDING * 2, Shades.GRAY);
 
-        // Key / action rows
         for (int i = 0; i < KEYBIND_ENTRIES.size(); i++) {
             int rowY = kbPy + TITLE_H + PADDING + i * ROW_H;
             Pair<String, String> entry = KEYBIND_ENTRIES.get(i);
-            RenderUtils.drawDefaultScaledText(context, Component.literal(entry.left),  kbPx + PADDING, rowY, 0.75F, false, 0xFF00B7FF);
-            RenderUtils.drawDefaultScaledText(context, Component.literal(entry.right), kbPx + 95,      rowY, 0.75F, false, 0xFFCCCCCC);
+            RenderUtils.drawDefaultScaledText(context, Component.literal(entry.left), kbPx + PADDING, rowY, 0.75F, false, 0xFF00B7FF);
+            RenderUtils.drawDefaultScaledText(context, Component.literal(entry.right), kbPx + 95, rowY, 0.75F, false, 0xFFCCCCCC);
         }
     }
-
-    // ── File I/O ───────────────────────────────────────────────────────────────
 
     public void loadContents() {
         if (loading.isRendering()) return;

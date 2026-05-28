@@ -13,6 +13,7 @@ import io.github.itzispyder.clickcrystals.util.minecraft.render.RenderUtils;
 import io.github.itzispyder.clickcrystals.util.misc.Dimensions;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -24,30 +25,29 @@ import java.util.Set;
 public class ClickScriptAutocomplete implements Global {
 
     private static final int MAX_SUGGESTIONS = 8;
-    private static final int ROW_H           = 10;
-    private static final int PADDING         = 4;
-    private static final int POPUP_W         = 120;
-    private static final int COLOR_BG        = 0xF0141420;
-    private static final int COLOR_BORDER    = 0xFF00B7FF;
-    private static final int COLOR_SELECTED  = 0x4000B7FF;
-    private static final int COLOR_TEXT      = 0xFFAAAAAA;
+    private static final int ROW_H = 10;
+    private static final int PADDING = 4;
+    private static final int POPUP_W = 120;
+    private static final int COLOR_BG = 0xF0141420;
+    private static final int COLOR_BORDER = 0xFF00B7FF;
+    private static final int COLOR_SELECTED = 0x4000B7FF;
+    private static final int COLOR_TEXT = 0xFFAAAAAA;
     private static final int COLOR_HIGHLIGHT = 0xFFFFFFFF;
 
-    private static final List<String> COMMANDS, EVENT_TYPES, CONDITIONALS, MODULE_ACTIONS,
-                                      CONFIG_TYPES, DEFINE_TYPES, INPUT_TYPES, TARGET_TYPES, DIMENSIONS;
-    private static final Set<String>  COMMAND_SET;
+    private static final List<String> COMMANDS, EVENT_TYPES, CONDITIONALS, MODULE_ACTIONS, CONFIG_TYPES, DEFINE_TYPES, INPUT_TYPES, TARGET_TYPES, DIMENSIONS;
+    private static final Set<String> COMMAND_SET;
 
     static {
-        COMMANDS       = sorted(Arrays.asList(ClickScript.collectNames()));
-        COMMAND_SET    = new HashSet<>(COMMANDS);
-        EVENT_TYPES    = enumValues(OnEventCmd.EventType.class);
-        CONDITIONALS   = sorted(new ArrayList<>(Conditionals.registeredNames()));
+        COMMANDS = sorted(Arrays.asList(ClickScript.collectNames()));
+        COMMAND_SET = new HashSet<>(COMMANDS);
+        EVENT_TYPES = enumValues(OnEventCmd.EventType.class);
+        CONDITIONALS = sorted(new ArrayList<>(Conditionals.registeredNames()));
         MODULE_ACTIONS = enumValues(ModuleCmd.Action.class);
-        CONFIG_TYPES   = enumValues(ConfigCmd.Type.class);
-        DEFINE_TYPES   = enumValues(DefineCmd.Type.class);
-        INPUT_TYPES    = enumValues(InputType.class);
-        TARGET_TYPES   = enumValues(TargetType.class);
-        DIMENSIONS     = enumValues(Dimensions.class);
+        CONFIG_TYPES = enumValues(ConfigCmd.Type.class);
+        DEFINE_TYPES = enumValues(DefineCmd.Type.class);
+        INPUT_TYPES = enumValues(InputType.class);
+        TARGET_TYPES = enumValues(TargetType.class);
+        DIMENSIONS = enumValues(Dimensions.class);
     }
 
     private final List<String> suggestions = new ArrayList<>();
@@ -55,9 +55,7 @@ public class ClickScriptAutocomplete implements Global {
     private boolean visible = false;
 
     private static <E extends Enum<E>> List<String> enumValues(Class<E> cls) {
-        return sorted(Arrays.stream(cls.getEnumConstants())
-                .map(e -> e.name().toLowerCase())
-                .toList());
+        return sorted(Arrays.stream(cls.getEnumConstants()).map(e -> e.name().toLowerCase()).toList());
     }
 
     private static List<String> sorted(List<String> list) {
@@ -117,13 +115,13 @@ public class ClickScriptAutocomplete implements Global {
     private static List<String> firstArgPool(String cmd, int idx) {
         if (idx != 1) return List.of();
         return switch (cmd) {
-            case "module"                               -> MODULE_ACTIONS;
-            case "config"                               -> CONFIG_TYPES;
-            case "define", "def"                       -> DEFINE_TYPES;
+            case "module" -> MODULE_ACTIONS;
+            case "config" -> CONFIG_TYPES;
+            case "define", "def" -> DEFINE_TYPES;
             case "input", "hold_input", "toggle_input" -> INPUT_TYPES;
-            case "interact"                             -> TARGET_TYPES;
-            case "dimension"                            -> DIMENSIONS;
-            default                                    -> List.of();
+            case "interact" -> TARGET_TYPES;
+            case "dimension" -> DIMENSIONS;
+            default -> List.of();
         };
     }
 
@@ -167,7 +165,7 @@ public class ClickScriptAutocomplete implements Global {
         if (!visible || suggestions.isEmpty()) return;
 
         int popupH = suggestions.size() * ROW_H + PADDING * 2;
-        int px = Math.clamp(cursorPixelX, scissorX, scissorX + scissorW - POPUP_W);
+        int px = Mth.clamp(cursorPixelX, scissorX, scissorX + scissorW - POPUP_W);
         int py = cursorPixelY + ROW_H + 1;
 
         RenderUtils.fillRoundRect(context, px, py, POPUP_W, popupH, 3, COLOR_BG);
