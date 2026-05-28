@@ -17,32 +17,29 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class ClickScriptAutocomplete implements Global {
 
     private static final int MAX_SUGGESTIONS = 8;
-    private static final int ROW_H           = 9;
-    private static final int PADDING         = 3;
+    private static final int ROW_H           = 10;
+    private static final int PADDING         = 4;
     private static final int POPUP_W         = 120;
     private static final int COLOR_BG        = 0xF0141420;
-    private static final int COLOR_SELECTED  = 0xFF2244AA;
-    private static final int COLOR_BORDER    = 0xFF3355CC;
+    private static final int COLOR_BORDER    = 0xFF00B7FF;
+    private static final int COLOR_SELECTED  = 0x4000B7FF;
     private static final int COLOR_TEXT      = 0xFFAAAAAA;
     private static final int COLOR_HIGHLIGHT = 0xFFFFFFFF;
 
-    private static final List<String> COMMANDS;
-    private static final List<String> EVENT_TYPES;
-    private static final List<String> CONDITIONALS;
-    private static final List<String> MODULE_ACTIONS;
-    private static final List<String> CONFIG_TYPES;
-    private static final List<String> DEFINE_TYPES;
-    private static final List<String> INPUT_TYPES;
-    private static final List<String> TARGET_TYPES;
-    private static final List<String> DIMENSIONS;
+    private static final List<String> COMMANDS, EVENT_TYPES, CONDITIONALS, MODULE_ACTIONS,
+                                      CONFIG_TYPES, DEFINE_TYPES, INPUT_TYPES, TARGET_TYPES, DIMENSIONS;
+    private static final Set<String>  COMMAND_SET;
 
     static {
         COMMANDS       = sorted(Arrays.asList(ClickScript.collectNames()));
+        COMMAND_SET    = new HashSet<>(COMMANDS);
         EVENT_TYPES    = enumValues(OnEventCmd.EventType.class);
         CONDITIONALS   = sorted(new ArrayList<>(Conditionals.registeredNames()));
         MODULE_ACTIONS = enumValues(ModuleCmd.Action.class);
@@ -78,7 +75,8 @@ public class ClickScriptAutocomplete implements Global {
         int tokenIdx = tokens.length - 1;
         String prefix = tokenIdx >= 0 ? tokens[tokenIdx] : "";
 
-        if (prefix.isEmpty() && tokenIdx > 0) return;
+        // Only skip blank lines, not mid-line spaces (e.g. "on " should still suggest).
+        if (prefix.isEmpty() && tokenIdx == 0) return;
 
         List<String> pool = resolvePool(tokens, tokenIdx);
         for (String kw : pool) {
@@ -95,16 +93,37 @@ public class ClickScriptAutocomplete implements Global {
     private List<String> resolvePool(String[] tokens, int tokenIdx) {
         if (tokenIdx == 0) return COMMANDS;
         String cmd = tokens[0].toLowerCase();
+        if (cmd.equals("on")) return tokenIdx == 1 ? EVENT_TYPES : List.of();
+        if (cmd.equals("if") || cmd.equals("if_not")) return resolveIfPool(tokens, tokenIdx);
+        return firstArgPool(cmd, tokenIdx);
+    }
+
+    // "if"/"if_not": if <conditional> [cond_args...] <inline_command> [cmd_args...]
+    // Scans forward to find the inline command, then hands off to firstArgPool.
+    private List<String> resolveIfPool(String[] tokens, int tokenIdx) {
+        if (tokenIdx == 1) return CONDITIONALS;
+
+        for (int i = 2; i < tokenIdx; i++) {
+            if (COMMAND_SET.contains(tokens[i].toLowerCase())) {
+                return firstArgPool(tokens[i].toLowerCase(), tokenIdx - i);
+            }
+        }
+
+        // Still in conditional args or about to type the inline command.
+        return COMMANDS;
+    }
+
+    // Returns the first-argument suggestion pool for a command, or nothing for any other position.
+    private static List<String> firstArgPool(String cmd, int idx) {
+        if (idx != 1) return List.of();
         return switch (cmd) {
-            case "on"                                     -> tokenIdx == 1 ? EVENT_TYPES    : List.of();
-            case "if", "if_not"                          -> tokenIdx == 1 ? CONDITIONALS   : List.of();
-            case "module"                                -> tokenIdx == 1 ? MODULE_ACTIONS  : List.of();
-            case "config"                                -> tokenIdx == 1 ? CONFIG_TYPES    : List.of();
-            case "define", "def"                        -> tokenIdx == 1 ? DEFINE_TYPES    : List.of();
-            case "input", "hold_input", "toggle_input"  -> tokenIdx == 1 ? INPUT_TYPES     : List.of();
-            case "interact"                              -> tokenIdx == 1 ? TARGET_TYPES    : List.of();
-            case "dimension"                             -> tokenIdx == 1 ? DIMENSIONS      : List.of();
-            default                                      -> List.of();
+            case "module"                               -> MODULE_ACTIONS;
+            case "config"                               -> CONFIG_TYPES;
+            case "define", "def"                       -> DEFINE_TYPES;
+            case "input", "hold_input", "toggle_input" -> INPUT_TYPES;
+            case "interact"                             -> TARGET_TYPES;
+            case "dimension"                            -> DIMENSIONS;
+            default                                    -> List.of();
         };
     }
 
@@ -148,16 +167,16 @@ public class ClickScriptAutocomplete implements Global {
         if (!visible || suggestions.isEmpty()) return;
 
         int popupH = suggestions.size() * ROW_H + PADDING * 2;
-        int px = Math.max(scissorX, Math.min(cursorPixelX, scissorX + scissorW - POPUP_W));
+        int px = Math.clamp(cursorPixelX, scissorX, scissorX + scissorW - POPUP_W);
         int py = cursorPixelY + ROW_H + 1;
 
-        RenderUtils.fillRect(context, px - 1, py - 1, POPUP_W + 2, popupH + 2, COLOR_BORDER);
-        RenderUtils.fillRect(context, px, py, POPUP_W, popupH, COLOR_BG);
+        RenderUtils.fillRoundRect(context, px, py, POPUP_W, popupH, 3, COLOR_BG);
+        RenderUtils.fillRoundShadow(context, px, py, POPUP_W, popupH, 3, 1, COLOR_BORDER, COLOR_BORDER);
 
         for (int i = 0; i < suggestions.size(); i++) {
             int rowY = py + PADDING + i * ROW_H;
             if (i == selectedIndex) {
-                RenderUtils.fillRect(context, px, rowY - 1, POPUP_W, ROW_H + 1, COLOR_SELECTED);
+                RenderUtils.fillRect(context, px + 1, rowY - 1, POPUP_W - 2, ROW_H, COLOR_SELECTED);
             }
             int color = i == selectedIndex ? COLOR_HIGHLIGHT : COLOR_TEXT;
             RenderUtils.drawDefaultScaledText(context, Component.literal(suggestions.get(i)), px + PADDING, rowY, 0.8F, false, color);

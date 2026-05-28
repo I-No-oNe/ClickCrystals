@@ -23,10 +23,10 @@ import java.util.function.Predicate;
 
 public class TextFieldElement extends GuiElement implements Typeable {
 
-    private static final int UNDO_LIMIT    = 100;
-    private static final int GUTTER_COLOR  = 0xFF4A5568;
-    private static final int SEL_COLOR     = 0xA07E75FF;
-    private static final int CURSOR_COLOR  = 0xE0FFFFFF;
+    private static final int UNDO_LIMIT   = 100;
+    private static final int GUTTER_COLOR = 0xFF4A5568;
+    private static final int SEL_COLOR    = 0xA07E75FF;
+    private static final int CURSOR_COLOR = 0xE0FFFFFF;
 
     private TextHighlighter highlighter = new TextHighlighter();
     private ChatColor backgroundColor = ChatColor.BLACK;
@@ -40,10 +40,14 @@ public class TextFieldElement extends GuiElement implements Typeable {
     private boolean selectionBlinking, selectedAll;
     private int selectionBlink;
     private final ArrayDeque<String> undoStack = new ArrayDeque<>();
-    private int preferredCol = -1; // preserved column for Up/Down navigation
-    private int dragAnchor = -1;   // content index where drag started
-    private Function<Integer, Boolean> keyInterceptor; // set by parent screen to intercept keys before default handling
-    private Runnable onContentChanged; // called after any content or cursor change
+    private final ArrayDeque<String> redoStack = new ArrayDeque<>();
+    private int preferredCol = -1;
+    private int dragAnchor = -1;
+    private Function<Integer, Boolean> keyInterceptor;
+    private Runnable onStateChanged; // fires on any cursor/content change
+
+    // Cached row layout from last render — reused by pixelToContentPos and renderRangeHighlight
+    private List<FormattedCharSequence> cachedRows = List.of();
 
     public TextFieldElement(String preText, int x, int y, int width, int height) {
         super(x, y, width, height);
@@ -106,6 +110,7 @@ public class TextFieldElement extends GuiElement implements Typeable {
     private void pushUndo() {
         if (!undoStack.isEmpty() && undoStack.peek().equals(content)) return;
         undoStack.push(content);
+        redoStack.clear();
         while (undoStack.size() > UNDO_LIMIT) undoStack.removeLast();
     }
 
@@ -114,18 +119,79 @@ public class TextFieldElement extends GuiElement implements Typeable {
     @Override
     public void onChar(char chr) {
         if (Character.isISOControl(chr)) return;
+
+        char closing = matchingClose(chr);
+
+        // Wrap selection in brackets rather than replacing it.
+        if (closing != 0 && (hasRange() || selectedAll)) {
+            wrapSelection(chr, closing);
+            preferredCol = -1;
+            if (onStateChanged != null) onStateChanged.run();
+            return;
+        }
+
         if (hasRange() || selectedAll) deleteRange();
+
+        // Skip over a closing bracket that was auto-inserted.
+        if (isClosingBracket(chr) && selectionStart < content.length() && content.charAt(selectionStart) == chr) {
+            shiftRight();
+            preferredCol = -1;
+            if (onStateChanged != null) onStateChanged.run();
+            return;
+        }
+
+        // Auto-close: ( → (), [ → [], { → {}
+        if (closing != 0) {
+            final char c = closing;
+            onInput(input -> insertInput(chr + String.valueOf(c)));
+            shiftRight();
+            preferredCol = -1;
+            if (onStateChanged != null) onStateChanged.run();
+            return;
+        }
+
         onInput(input -> insertInput(String.valueOf(chr)));
         shiftRight();
         preferredCol = -1;
+        if (onStateChanged != null) onStateChanged.run();
+    }
+
+    // Returns the matching closing bracket for an opening bracket, or 0 if not a bracket.
+    private static char matchingClose(char open) {
+        return switch (open) {
+            case '(' -> ')';
+            case '[' -> ']';
+            case '{' -> '}';
+            default  -> 0;
+        };
+    }
+
+    private static boolean isClosingBracket(char c) {
+        return c == ')' || c == ']' || c == '}';
+    }
+
+    private void wrapSelection(char open, char close) {
+        int lo = selectedAll ? 0 : selMin();
+        int hi = selectedAll ? content.length() : selMax();
+        pushUndo();
+        content = content.substring(0, lo) + open + content.substring(lo, hi) + close + content.substring(hi);
+        selectionStart = lo + 1;
+        selectionEnd   = hi + 1;
+        selectedAll = false;
+        styledContent = style(content);
+        updateSelection();
     }
 
     @Override
     public boolean onKey(int key, int scan) {
         if (!(mc.screen instanceof GuiScreen screen)) return false;
-
         if (keyInterceptor != null && keyInterceptor.apply(key)) return true;
+        boolean handled = handleKeyInner(key, screen);
+        if (handled && onStateChanged != null) onStateChanged.run();
+        return handled;
+    }
 
+    private boolean handleKeyInner(int key, GuiScreen screen) {
         if (key == GLFW.GLFW_KEY_ESCAPE) {
             if (hasRange() || selectedAll) {
                 selectedAll = false;
@@ -160,7 +226,19 @@ public class TextFieldElement extends GuiElement implements Typeable {
                 }
                 case GLFW.GLFW_KEY_Z -> {
                     if (!undoStack.isEmpty()) {
+                        redoStack.push(content);
                         content = undoStack.pop();
+                        selectionStart = selectionEnd = MathUtils.clamp(selectionStart, 0, content.length());
+                        styledContent = style(content);
+                        updateSelection();
+                    }
+                    preferredCol = -1;
+                    return true;
+                }
+                case GLFW.GLFW_KEY_Y -> {
+                    if (!redoStack.isEmpty()) {
+                        undoStack.push(content);
+                        content = redoStack.pop();
                         selectionStart = selectionEnd = MathUtils.clamp(selectionStart, 0, content.length());
                         styledContent = style(content);
                         updateSelection();
@@ -232,6 +310,19 @@ public class TextFieldElement extends GuiElement implements Typeable {
         switch (key) {
             case GLFW.GLFW_KEY_BACKSPACE -> {
                 if (hasRange() || selectedAll) { deleteRange(); preferredCol = -1; return true; }
+                // Smart delete: if cursor sits between an empty matching pair, delete both.
+                if (selectionStart > 0 && selectionStart < content.length()) {
+                    char expectedClose = matchingClose(content.charAt(selectionStart - 1));
+                    if (expectedClose != 0 && content.charAt(selectionStart) == expectedClose) {
+                        pushUndo();
+                        content = content.substring(0, selectionStart - 1) + content.substring(selectionStart + 1);
+                        selectionStart = selectionEnd = selectionStart - 1;
+                        styledContent = style(content);
+                        updateSelection();
+                        preferredCol = -1;
+                        return true;
+                    }
+                }
                 onInput(cur -> selectionStart > 0 && !cur.isEmpty()
                         ? cur.substring(0, selectionStart - 1) + cur.substring(selectionStart)
                         : cur);
@@ -251,10 +342,24 @@ public class TextFieldElement extends GuiElement implements Typeable {
                 String before = content.substring(ls, selectionStart);
                 int spaces = 0;
                 while (spaces < before.length() && before.charAt(spaces) == ' ') spaces++;
-                String indent = "\n" + " ".repeat(spaces);
+
+                boolean betweenBraces = selectionStart > 0
+                        && selectionStart < content.length()
+                        && content.charAt(selectionStart - 1) == '{'
+                        && content.charAt(selectionStart) == '}';
+
                 pushUndo();
-                content = content.substring(0, selectionStart) + indent + content.substring(selectionStart);
-                selectionStart = selectionEnd = selectionStart + indent.length();
+                if (betweenBraces) {
+                    // Place cursor on indented inner line, closing brace on its own line below.
+                    String inner = "\n" + " ".repeat(spaces + 4);
+                    String outer = "\n" + " ".repeat(spaces);
+                    content = content.substring(0, selectionStart) + inner + outer + content.substring(selectionStart);
+                    selectionStart = selectionEnd = selectionStart + inner.length();
+                } else {
+                    String indent = "\n" + " ".repeat(spaces);
+                    content = content.substring(0, selectionStart) + indent + content.substring(selectionStart);
+                    selectionStart = selectionEnd = selectionStart + indent.length();
+                }
                 styledContent = style(content);
                 updateSelection();
                 preferredCol = -1;
@@ -342,7 +447,6 @@ public class TextFieldElement extends GuiElement implements Typeable {
         if (button == 0) dragAnchor = -1;
     }
 
-    // Called from IDE's mouseDragListeners for drag-select
     public void onDrag(double mouseX, double mouseY) {
         if (dragAnchor < 0 || !isHovered((int) mouseX, (int) mouseY)) return;
         int pos = pixelToContentPos(mouseX, mouseY);
@@ -353,14 +457,17 @@ public class TextFieldElement extends GuiElement implements Typeable {
     }
 
     private int pixelToContentPos(double mouseX, double mouseY) {
-        List<FormattedCharSequence> rows = mc.font.split(FormattedText.of(styledContent), width - 25);
+        List<FormattedCharSequence> rows = cachedRows.isEmpty()
+                ? mc.font.split(FormattedText.of(styledContent), width - 25)
+                : cachedRows;
         int targetRow = MathUtils.clamp((int) ((mouseY - (y + textY)) / 9), 0, Math.max(0, rows.size() - 1));
 
+        // Walk content (unstyled) to find the content index at the start of targetRow.
+        // Using raw content avoids calling style() on every character (O(n) savings).
         int pos = 0, row = 0, rowStart = 0;
         while (pos <= content.length() && row < targetRow) {
             int next = pos + 1;
-            String sub = content.substring(0, next);
-            List<FormattedCharSequence> r = mc.font.split(FormattedText.of(style(sub)), width - 25);
+            List<FormattedCharSequence> r = mc.font.split(FormattedText.of(content.substring(0, next)), width - 25);
             if (r.size() > row + 1) { row++; rowStart = next; }
             pos = next;
         }
@@ -370,8 +477,7 @@ public class TextFieldElement extends GuiElement implements Typeable {
         double targetX = mouseX - (x + 20);
 
         for (int p = rowStart; p <= content.length(); p++) {
-            String sub = content.substring(0, p);
-            List<FormattedCharSequence> r = mc.font.split(FormattedText.of(style(sub)), width - 25);
+            List<FormattedCharSequence> r = mc.font.split(FormattedText.of(content.substring(0, p)), width - 25);
             if (r.size() > targetRow + 1) break;
             double cx = r.isEmpty() ? 0 : mc.font.width(r.get(Math.min(targetRow, r.size() - 1)));
             double dist = Math.abs(cx - targetX);
@@ -390,6 +496,7 @@ public class TextFieldElement extends GuiElement implements Typeable {
 
         RenderUtils.fillRect(context, x, y, width, height, backgroundColor.getHex());
         List<FormattedCharSequence> text = mc.font.split(FormattedText.of(styledContent), width - 25);
+        cachedRows = text;
         textHeight = text.size() * 9;
 
         // Line number gutter — numbers only, no background fill
@@ -442,9 +549,10 @@ public class TextFieldElement extends GuiElement implements Typeable {
         }
     }
 
+    // Uses raw content (not styled) to avoid style() overhead — accurate enough for cursor positioning.
     private Point computePointFor(int pos) {
         String sub = content.substring(0, MathUtils.clamp(pos, 0, content.length()));
-        List<FormattedCharSequence> lines = mc.font.split(FormattedText.of(style(sub)), width - 25);
+        List<FormattedCharSequence> lines = mc.font.split(FormattedText.of(sub), width - 25);
         if (lines == null || lines.isEmpty()) return new Point(0, 0);
         return new Point(mc.font.width(lines.get(lines.size() - 1)), (lines.size() - 1) * 9);
     }
@@ -466,7 +574,6 @@ public class TextFieldElement extends GuiElement implements Typeable {
         content = factory.apply(content);
         updateSelection();
         this.styledContent = style(content);
-        if (onContentChanged != null) onContentChanged.run();
     }
 
     // ── Cursor movement ───────────────────────────────────────────────────────
@@ -507,9 +614,9 @@ public class TextFieldElement extends GuiElement implements Typeable {
         }
     }
 
+    // Pure text transformation — no side effects.
     public String style(String s) {
         if (s == null || s.isEmpty()) return " ";
-        this.updateSelection();
         return highlighter.highlightText(s);
     }
 
@@ -574,15 +681,22 @@ public class TextFieldElement extends GuiElement implements Typeable {
     }
 
     public void setOnContentChanged(Runnable callback) {
-        this.onContentChanged = callback;
+        this.onStateChanged = callback;
     }
 
     public void clear() {
         content = styledContent = "";
         undoStack.clear();
+        redoStack.clear();
         dragAnchor = -1;
         preferredCol = -1;
+        cachedRows = List.of();
         resetSelection();
+    }
+
+    public void clearUndoHistory() {
+        undoStack.clear();
+        redoStack.clear();
     }
 
     // ── TextHighlighter ───────────────────────────────────────────────────────

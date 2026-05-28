@@ -27,8 +27,10 @@ import io.github.itzispyder.clickcrystals.util.FileValidationUtils;
 import io.github.itzispyder.clickcrystals.util.StringUtils;
 import io.github.itzispyder.clickcrystals.util.minecraft.render.RenderUtils;
 import io.github.itzispyder.clickcrystals.util.misc.Dimensions;
+import io.github.itzispyder.clickcrystals.util.misc.Pair;
 import io.github.itzispyder.clickcrystals.util.misc.Voidable;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
 import java.io.BufferedReader;
@@ -37,6 +39,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
@@ -44,13 +47,11 @@ import static io.github.itzispyder.clickcrystals.util.minecraft.render.RenderUti
 
 public class ClickScriptIDE extends DefaultBase {
 
-    private static final int TAB_BAR_H = 12;
-
     public static final TextFieldElement.TextHighlighter CLICKSCRIPT_HIGHLIGHTER = new TextFieldElement.TextHighlighter() {{
         ChatColor og = getOriginalColor();
-        Function<ChatColor, Function<String, String>> applyColor = c -> s -> "%s%s%s".formatted(c, s, og);
+        Function<ChatColor, Function<String, String>> applyColor    = c -> s -> "%s%s%s".formatted(c, s, og);
         Function<ChatColor, Function<String, String>> applyUnderline = c -> s -> "%s§n%s§r%s".formatted(c, s, og);
-        Function<ChatColor, Function<String, String>> applyItalic = c -> s -> "%s§o%s§r%s".formatted(c, s, og);
+        Function<ChatColor, Function<String, String>> applyItalic   = c -> s -> "%s§o%s§r%s".formatted(c, s, og);
 
         this.put(s -> StringUtils.startsWithAny(s, ":", "#"), applyColor.apply(ChatColor.DARK_GREEN));
         this.put(s -> s.replaceAll("[0-9><=!.+~-]", "").isEmpty(), applyColor.apply(ChatColor.DARK_AQUA));
@@ -66,23 +67,44 @@ public class ClickScriptIDE extends DefaultBase {
         this.put(ChatColor.ORANGE, ClickScript.collectNames());
     }};
 
-    private final EditorTabBar tabBar = new EditorTabBar();
+    private static final List<Pair<String, String>> KEYBIND_ENTRIES = List.of(
+            Pair.of("Ctrl+S",   "Save"),
+            Pair.of("Ctrl+Z",   "Undo"),
+            Pair.of("Ctrl+Y",   "Redo"),
+            Pair.of("Ctrl+C",   "Copy"),
+            Pair.of("Ctrl+X",   "Cut"),
+            Pair.of("Ctrl+V",   "Paste"),
+            Pair.of("Ctrl+A",   "Select All"),
+            Pair.of("Ctrl+D",   "Duplicate Line"),
+            Pair.of("Ctrl+/",   "Toggle Comment"),
+            Pair.of("Tab",      "Autocomplete / Indent"),
+            Pair.of("Ctrl+←→",  "Word Jump"),
+            Pair.of("↑↓",       "Navigate Suggestions"),
+            Pair.of("Enter",    "Insert Suggestion"),
+            Pair.of("Escape",   "Dismiss")
+    );
+
     private final ClickScriptAutocomplete autocomplete = new ClickScriptAutocomplete();
     private final LoadingIconElement loading;
+    private File currentFile;
+    private boolean showKeybinds = false;
+    // Bounds of the keybind modal — set during renderKeybindsModal, used for hit-testing in mouseClicked.
+    private int kbPx, kbPy, kbPw, kbPh;
+
+    public TextFieldElement textField = new TextFieldElement(contentX, contentY + 21, contentWidth, contentHeight - 21) {{
+        this.setHighlighter(CLICKSCRIPT_HIGHLIGHTER);
+        this.setBackgroundColor(ChatColor.RESET);
+    }};
+
     private final AbstractElement
             saveButton,
             saveAndCloseButton,
             closeButton,
             discardChangesButton,
+            keybindsButton,
             openFileButton,
             openScriptsButton,
             deleteButton;
-
-    // textField shifted down TAB_BAR_H pixels to make room for the tab bar
-    public TextFieldElement textField = new TextFieldElement(contentX, contentY + 21 + TAB_BAR_H, contentWidth, contentHeight - 21 - TAB_BAR_H) {{
-        this.setHighlighter(CLICKSCRIPT_HIGHLIGHTER);
-        this.setBackgroundColor(ChatColor.RESET);
-    }};
 
     public ClickScriptIDE(ScriptedModule module) {
         this(new File(module.filepath));
@@ -90,9 +112,8 @@ public class ClickScriptIDE extends DefaultBase {
 
     public ClickScriptIDE(File file) {
         super("ClickScript IDE");
+        this.currentFile = file;
         this.addChild(textField);
-
-        tabBar.open(file);
 
         this.loading = new LoadingIconElement(contentX + contentWidth / 2 - 10, contentY + contentHeight / 2 - 10, 20);
         this.loading.setRendering(false);
@@ -102,11 +123,10 @@ public class ClickScriptIDE extends DefaultBase {
         this.navlistModules.forEach(this::removeChild);
         this.removeChild(buttonSearch);
 
-        // Wire key interceptor: autocomplete and IDE shortcuts take priority
         textField.setKeyInterceptor(key -> {
-            // Autocomplete navigation
+            // Dismiss keybind modal first.
+            if (key == GLFW.GLFW_KEY_ESCAPE && showKeybinds) { showKeybinds = false; return true; }
             if (autocomplete.onKey(key)) return true;
-            // Autocomplete insert on Tab or Enter
             if (autocomplete.isInsertKey(key)) {
                 String sel = autocomplete.getSelected();
                 if (sel != null) {
@@ -115,25 +135,21 @@ public class ClickScriptIDE extends DefaultBase {
                     return true;
                 }
             }
-            // Ctrl+S — save
             if (key == GLFW.GLFW_KEY_S && ctrlKeyPressed) { saveContents(); return true; }
-            // Ctrl+W — close
-            if (key == GLFW.GLFW_KEY_W && ctrlKeyPressed) { UserInputListener.openModulesScreen(); return true; }
             return false;
         });
 
-        // Update autocomplete after each content change
         textField.setOnContentChanged(() ->
                 autocomplete.update(textField.getCurrentLine(), textField.getCursorColInLine()));
 
-        // Drag selection
         this.mouseDragListeners.add((mx, my, button, dx, dy) -> {
             if (button == 0) textField.onDrag(mx, my);
         });
 
-        // Render autocomplete popup on top of everything
-        this.screenRenderListeners.add((context, mouseX, mouseY, delta) ->
-                autocomplete.render(context, textField.getCursorPixelX(), textField.getCursorPixelY(), contentX, contentWidth));
+        this.screenRenderListeners.add((context, mouseX, mouseY, delta) -> {
+            autocomplete.render(context, textField.getCursorPixelX(), textField.getCursorPixelY(), contentX, contentWidth);
+            if (showKeybinds) renderKeybindsModal(context);
+        });
 
         saveButton = AbstractElement.create().dimensions(navWidth, 12)
                 .tooltip("Save contents")
@@ -163,9 +179,16 @@ public class ClickScriptIDE extends DefaultBase {
                     if (button.isHovered(mouseX, mouseY)) fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.GENERIC_LOW);
                     drawText(context, "Discard Changes", button.x + 7, button.y + button.height / 3, 0.7F, false);
                 }).build();
+        keybindsButton = AbstractElement.create().dimensions(navWidth, 12)
+                .tooltip("Show keybind reference")
+                .onPress(button -> showKeybinds = !showKeybinds)
+                .onRender((context, mouseX, mouseY, button) -> {
+                    if (button.isHovered(mouseX, mouseY)) fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.LIGHT_GRAY);
+                    drawText(context, "Keybinds", button.x + 7, button.y + button.height / 3, 0.7F, false);
+                }).build();
         openFileButton = AbstractElement.create().dimensions(navWidth, 12)
                 .tooltip("Open file in File Explorer")
-                .onPress(button -> system.openFile(getActiveFilepath()))
+                .onPress(button -> system.openFile(currentFile.getPath()))
                 .onRender((context, mouseX, mouseY, button) -> {
                     if (button.isHovered(mouseX, mouseY)) fillRoundHoriLine(context, button.x, button.y, navWidth, button.height, Shades.LIGHT_GRAY);
                     drawText(context, "Open .CCS File", button.x + 7, button.y + button.height / 3, 0.7F, false);
@@ -189,6 +212,7 @@ public class ClickScriptIDE extends DefaultBase {
         this.addChild(saveAndCloseButton);
         this.addChild(closeButton);
         this.addChild(discardChangesButton);
+        this.addChild(keybindsButton);
         this.addChild(openFileButton);
         this.addChild(openScriptsButton);
         this.addChild(deleteButton);
@@ -203,14 +227,12 @@ public class ClickScriptIDE extends DefaultBase {
         context.pose().pushMatrix();
         context.pose().translate(baseX, baseY);
 
-        // backdrop
         fillRoundRect(context, 0, 0, baseWidth, baseHeight, 10, Shades.TRANS_BLACK);
         RenderUtils.fillRoundShadow(context, 0, 0, baseWidth, baseHeight, 10, 1, 0xFF00B7FF, 0xFF00B7FF);
         RenderUtils.fillRoundShadow(context, 0, 0, baseWidth, baseHeight, 10, -10, 0x8000B7FF, 0x0000B7FF);
         RenderUtils.fillRoundShadow(context, 0, 0, baseWidth, baseHeight, 10, 10, 0x8000B7FF, 0x0000B7FF);
         fillRoundTabTop(context, 110, 10, 300, 230, 10, Shades.DARK_GRAY);
 
-        // navbar
         int caret = 10;
         drawTexture(context, Tex.ICON, 8, caret - 2, 10, 10);
         drawText(context, "ClickCrystals v%s".formatted(version), 22, 11, 0.7F, false);
@@ -222,6 +244,7 @@ public class ClickScriptIDE extends DefaultBase {
         buttonNews.x = baseX + 10;        buttonNews.y = baseY + caret;        caret += 12;
         buttonSettings.x = baseX + 10;    buttonSettings.y = baseY + caret;
 
+        // ── Save section ──────────────────────────────────────────────────────
         caret += 16;
         drawHorLine(context, 10, caret, 90, Shades.GRAY);
         caret += 6;
@@ -230,6 +253,13 @@ public class ClickScriptIDE extends DefaultBase {
         closeButton.x = baseX + 10;          closeButton.y = baseY + caret;          caret += 16;
         discardChangesButton.x = baseX + 10; discardChangesButton.y = baseY + caret;
 
+        // ── Keybinds section ──────────────────────────────────────────────────
+        caret += 16;
+        drawHorLine(context, 10, caret, 90, Shades.GRAY);
+        caret += 6;
+        keybindsButton.x = baseX + 10;    keybindsButton.y = baseY + caret;
+
+        // ── File section ──────────────────────────────────────────────────────
         caret += 16;
         drawHorLine(context, 10, caret, 90, Shades.GRAY);
         caret += 6;
@@ -239,97 +269,84 @@ public class ClickScriptIDE extends DefaultBase {
 
         context.pose().popMatrix();
 
-        // Content header
-        caret = contentY + 10;
-        drawTexture(context, Tex.ICON_CLICKSCRIPT, contentX + 10, caret - 7, 15, 15);
-        EditorTab active = tabBar.getActive();
-        String headerName = active != null ? active.filename : "";
-        drawText(context, "Editing '%s'".formatted(headerName), contentX + 30, caret - 4, false);
-        caret += 10;
-        drawHorLine(context, contentX, caret, 300, Shades.BLACK);
-
-        // Tab bar
-        tabBar.render(context, mouseX, mouseY, contentX, caret + 1, contentWidth);
+        int contentCaret = contentY + 10;
+        drawTexture(context, Tex.ICON_CLICKSCRIPT, contentX + 10, contentCaret - 7, 15, 15);
+        drawText(context, "Editing '%s'".formatted(currentFile.getName()), contentX + 30, contentCaret - 4, false);
+        contentCaret += 10;
+        drawHorLine(context, contentX, contentCaret, 300, Shades.BLACK);
     }
 
     @Override
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent click, boolean doubled) {
-        double mx = click.x(), my = click.y();
-        int button = click.button();
-
-        int tabBarY = contentY + 21;
-        EditorTabBar.HandleResult result = tabBar.handleClick((int) mx, (int) my, button, contentX, tabBarY);
-
-        if (result.isSwitch()) {
-            switchToTab(result.index());
-            return true;
-        }
-        if (result.isClose()) {
-            if (tabBar.close(result.index())) {
-                loadContents();
+        if (showKeybinds) {
+            double mx = click.x(), my = click.y();
+            // Close button: top-right corner of the modal.
+            boolean onClose = mx >= kbPx + kbPw - 18 && mx <= kbPx + kbPw
+                    && my >= kbPy && my <= kbPy + 16;
+            if (onClose || mx < kbPx || mx > kbPx + kbPw || my < kbPy || my > kbPy + kbPh) {
+                showKeybinds = false;
             }
-            return true;
+            return true; // consume all clicks while modal is open
         }
-
         return super.mouseClicked(click, doubled);
     }
 
-    // ── Tab management ─────────────────────────────────────────────────────────
+    // ── Keybind modal ─────────────────────────────────────────────────────────
 
-    public void openTab(File file) {
-        saveActiveTabState();
-        boolean isNew = tabBar.open(file);
-        if (isNew) {
-            loadContents();
-        } else {
-            restoreActiveTabState();
+    private void renderKeybindsModal(GuiGraphicsExtractor context) {
+        final int TITLE_H  = 18;
+        final int ROW_H    = 10;
+        final int PADDING  = 6;
+        final int CLOSE_W  = 14;
+        kbPw = 220;
+        kbPh = TITLE_H + KEYBIND_ENTRIES.size() * ROW_H + PADDING * 2;
+        kbPx = windowWidth  / 2 - kbPw / 2;
+        kbPy = windowHeight / 2 - kbPh / 2;
+
+        // Draw the same opaque background the IDE itself uses.
+        renderOpaqueBackground(context);
+
+        // Modal background + CC blue glow border
+        RenderUtils.fillRoundRect(context, kbPx, kbPy, kbPw, kbPh, 5, 0xF0141420);
+        RenderUtils.fillRoundShadow(context, kbPx, kbPy, kbPw, kbPh, 5, 1,  0xFF00B7FF, 0xFF00B7FF);
+        RenderUtils.fillRoundShadow(context, kbPx, kbPy, kbPw, kbPh, 5, 8,  0x4000B7FF, 0x0000B7FF);
+
+        // Title row
+        drawText(context, "Keybinds", kbPx + PADDING, kbPy + 4, 0.9F, false);
+        // × close button (top-right)
+        RenderUtils.drawDefaultScaledText(context, Component.literal("×"), kbPx + kbPw - CLOSE_W + 2, kbPy + 5, 0.9F, false, 0xFFCC4444);
+        // Separator under title
+        drawHorLine(context, kbPx + PADDING, kbPy + TITLE_H - 2, kbPw - PADDING * 2, Shades.GRAY);
+
+        // Key / action rows
+        for (int i = 0; i < KEYBIND_ENTRIES.size(); i++) {
+            int rowY = kbPy + TITLE_H + PADDING + i * ROW_H;
+            Pair<String, String> entry = KEYBIND_ENTRIES.get(i);
+            RenderUtils.drawDefaultScaledText(context, Component.literal(entry.left),  kbPx + PADDING, rowY, 0.75F, false, 0xFF00B7FF);
+            RenderUtils.drawDefaultScaledText(context, Component.literal(entry.right), kbPx + 95,      rowY, 0.75F, false, 0xFFCCCCCC);
         }
-    }
-
-    private void switchToTab(int index) {
-        saveActiveTabState();
-        // tabBar.handleClick already set activeIndex, we just restore state
-        restoreActiveTabState();
-        loadContents();
-    }
-
-    private void saveActiveTabState() {
-        EditorTab tab = tabBar.getActive();
-        if (tab == null) return;
-        tab.cursorPos = 0; // cursor position not directly accessible; textY stored below
-        tab.scrollY = 5;   // textY is private in textField — acceptable limitation
-    }
-
-    private void restoreActiveTabState() {
-        // Content is loaded fresh from disk by loadContents
-    }
-
-    private String getActiveFilepath() {
-        EditorTab tab = tabBar.getActive();
-        return tab != null ? tab.filepath : "";
     }
 
     // ── File I/O ───────────────────────────────────────────────────────────────
 
     public void loadContents() {
-        EditorTab tab = tabBar.getActive();
-        if (tab == null || loading.isRendering()) return;
+        if (loading.isRendering()) return;
 
         CompletableFuture.runAsync(() -> {
             loading.setRendering(true);
             try {
-                File file = new File(tab.filepath);
-                if (!FileValidationUtils.validate(file)) throw new IllegalStateException("File not found!");
+                if (!FileValidationUtils.validate(currentFile)) throw new IllegalStateException("File not found!");
 
                 StringBuilder sb = new StringBuilder();
-                try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                try (BufferedReader reader = new BufferedReader(new FileReader(currentFile))) {
                     reader.lines().forEach(line -> sb.append(line).append("\n"));
                 }
-                String content = sb.toString();
+                String fileContent = sb.toString();
 
                 mc.execute(() -> {
                     textField.clear();
-                    textField.onInput(input -> textField.insertInput(content));
+                    textField.onInput(input -> textField.insertInput(fileContent));
+                    textField.clearUndoHistory();
                     textField.shiftEnd();
                 });
             } catch (Exception ex) {
@@ -340,16 +357,14 @@ public class ClickScriptIDE extends DefaultBase {
     }
 
     public Voidable<CompletableFuture<Void>> saveContents() {
-        EditorTab tab = tabBar.getActive();
-        if (tab == null || loading.isRendering()) return Voidable.of(null);
+        if (loading.isRendering()) return Voidable.of(null);
 
         loading.setRendering(true);
         return Voidable.of(CompletableFuture.runAsync(() -> {
             try {
-                File file = new File(tab.filepath);
-                if (!FileValidationUtils.validate(file)) throw new IllegalStateException("File not found!");
+                if (!FileValidationUtils.validate(currentFile)) throw new IllegalStateException("File not found!");
 
-                try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+                try (BufferedWriter writer = new BufferedWriter(new FileWriter(currentFile))) {
                     writer.write(textField.getContent());
                 }
                 ReloadCommand.reload();
@@ -364,11 +379,8 @@ public class ClickScriptIDE extends DefaultBase {
     }
 
     public void deleteScript() {
-        EditorTab tab = tabBar.getActive();
-        if (tab == null) return;
         try {
-            File file = new File(tab.filepath);
-            if (file.delete()) ReloadCommand.reload();
+            if (currentFile.delete()) ReloadCommand.reload();
             else throw new IllegalStateException("file refused");
         } catch (Exception ex) {
             system.printErr("Error: cannot delete script");
@@ -380,7 +392,6 @@ public class ClickScriptIDE extends DefaultBase {
 
     @Override
     public void resize(int width, int height) {
-        EditorTab tab = tabBar.getActive();
-        mc.setScreen(tab != null ? new ClickScriptIDE(new File(tab.filepath)) : new ClickScriptIDE(new File("")));
+        mc.setScreen(new ClickScriptIDE(currentFile));
     }
 }
