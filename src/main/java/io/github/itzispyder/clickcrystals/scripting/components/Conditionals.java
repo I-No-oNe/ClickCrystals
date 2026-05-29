@@ -156,8 +156,8 @@ public class Conditionals implements Global {
     // @Format (if|if_not) targeting_fluid {}
     // @Format (while|while_not) <num>? targeting_fluid {}
     public static final Conditional TARGETING_FLUID;
-    // @Format (if|if_not) inventory_has <identifier> {}
-    // @Format (while|while_not) <num>? inventory_has <identifier> {}
+    // @Format (if|if_not) inventory_count <identifier> <comparator> <int> {}
+    // @Format (while|while_not) <num>? inventory_count <identifier> <comparator> <int> {}
     public static final Conditional INVENTORY_HAS;
     // @Format (if|if_not) inventory_count <identifier> <comparator> {}
     // @Format (while|while_not) <num>? inventory_count <identifier> <comparator> {}
@@ -168,8 +168,8 @@ public class Conditionals implements Global {
     // @Format (if|if_not) hotbar_has <identifier> {}
     // @Format (while|while_not) <num>? hotbar_has <identifier> {}
     public static final Conditional HOTBAR_HAS;
-    // @Format (if|if_not) hotbar_count <identifier> <comparator> {}
-    // @Format (while|while_not) <num>? hotbar_count <identifier> <comparator> {}
+    // @Format (if|if_not) hotbar_count <identifier> <comparator> <int> {}
+    // @Format (while|while_not) <num>? hotbar_count <identifier> <comparator> <int> {}
     public static final Conditional HOTBAR_COUNT;
 
     // @Format (if|if_not) input_active <input> {}
@@ -184,44 +184,44 @@ public class Conditionals implements Global {
     // @Format (if|if_not) entity_in_range <identifier> <num> {}
     // @Format (while|while_not) <num>? entity_in_range <identifier> <num> {}
     public static final Conditional ENTITY_IN_RANGE;
-    // @Format (if|if_not) block_in_fov <identifier> <num> {}
-    // @Format (while|while_not) <num>? block_in_fov <identifier> <num> {}
+    // @Format (if|if_not) block_in_range <identifier> <num> {}
+    // @Format (while|while_not) <num>? block_in_range <identifier> <num> {}
     public static final Conditional BLOCK_IN_FOV;
     // @Format (if|if_not) entity_in_fov <identifier> <num> {}
     // @Format (while|while_not) <num>? entity_in_fov <identifier> <num> {}
     public static final Conditional ENTITY_IN_FOV;
-    // @Format (if|if_not) attack_progress <comparator> {}
-    // @Format (while|while_not) <num>? attack_progress <comparator> {}
+    // @Format (if|if_not) attack_progress <comparator> <num> {}
+    // @Format (while|while_not) <num>? attack_progress <comparator> <num> {}
     public static final Conditional ATTACK_PROGRESS;
-    // @Format (if|if_not) health <comparator> {}
-    // @Format (while|while_not) <num>? health <comparator> {}
+    // @Format (if|if_not) health <comparator> <num> {}
+    // @Format (while|while_not) <num>? health <comparator> <num> {
     public static final Conditional HEALTH;
-    // @Format (if|if_not) hunger <comparator> {}
-    // @Format (while|while_not) <num>? hunger <comparator> {}
+    // @Format (if|if_not) hunger <comparator> <num> {}
+    // @Format (while|while_not) <num>? hunger <comparator> <num> {}
     public static final Conditional HUNGER;
-    // @Format (if|if_not) hurt_time <comparator> {}
-    // @Format (while|while_not) <num>? hurt_time <comparator> {}
+    // @Format (if|if_not) hurt_time <comparator> <int> {}
+    // @Format (while|while_not) <num>? hurt_time <comparator> <int> {}
     public static final Conditional HURT_TIME;
-    // @Format (if|if_not) armor <comparator> {}
-    // @Format (while|while_not) <num>? armor <comparator> {}
+    // @Format (if|if_not) armor <comparator> <int> {}
+    // @Format (while|while_not) <num>? armor <comparator> <int> {}
     public static final Conditional ARMOR;
-    // @Format (if|if_not) pos_x <comparator> {}
-    // @Format (while|while_not) <num>? pos_x <comparator> {}
+    // @Format (if|if_not) pos_x <comparator> <num> {}
+    // @Format (while|while_not) <num>? pos_x <comparator> <num> {}
     public static final Conditional POS_X;
-    // @Format (if|if_not) pos_y <comparator> {}
-    // @Format (while|while_not) <num>? pos_y <comparator> {}
+    // @Format (if|if_not) pos_y <comparator> <num> {}
+    // @Format (while|while_not) <num>? pos_y <comparator> <num> {}
     public static final Conditional POS_Y;
-    // @Format (if|if_not) pos_z <comparator> {}
-    // @Format (while|while_not) <num>? pos_z <comparator> {}
+    // @Format (if|if_not) pos_z <comparator> <num> {}
+    // @Format (while|while_not) <num>? pos_z <comparator> <num> {}
     public static final Conditional POS_Z;
-    // @Format (if|if_not) vel_x <comparator> {}
-    // @Format (while|while_not) <num>? vel_x <comparator> {}
+    // @Format (if|if_not) vel_x <comparator> <num> {}
+    // @Format (while|while_not) <num>? vel_x <comparator> <num> {}
     public static final Conditional VEL_X;
-    // @Format (if|if_not) vel_y <comparator> {}
-    // @Format (while|while_not) <num>? vel_y <comparator> {}
+    // @Format (if|if_not) vel_y <comparator> <num> {}
+    // @Format (while|while_not) <num>? vel_y <comparator> <num> {}
     public static final Conditional VEL_Y;
-    // @Format (if|if_not) vel_z <comparator> {}
-    // @Format (while|while_not) <num>? vel_z <comparator> {}
+    // @Format (if|if_not) vel_z <comparator> <num> {}
+    // @Format (while|while_not) <num>? vel_z <comparator> <num> {}
     public static final Conditional VEL_Z;
     // @Format (if|if_not) module_enabled ... {}
     // @Format (while|while_not) <num>? module_enabled ... {}
@@ -229,20 +229,20 @@ public class Conditionals implements Global {
     // @Format (if|if_not) module_disabled ... {}
     // @Format (while|while_not) <num>? module_disabled ... {}
     public static final Conditional MODULE_DISABLED;
-    // @Format (if|if_not) block <x> <y> <z> <identifier> {}
-    // @Format (while|while_not) <num>? block <x> <y> <z> <identifier> {}
+    // @Format (if|if_not) block <x> <y> <z> {}
+    // @Format (while|while_not) <num>? block <x> <y> <z> {}
     public static final Conditional BLOCK;
-    // @Format (if|if_not) entity <x> <y> <z> <identifier> {}
-    // @Format (while|while_not) <num>? entity <x> <y> <z> <identifier> {}
+    // @Format (if|if_not) entity <x> <y> <z> {}
+    // @Format (while|while_not) <num>? entity <x> <y> <z> {}
     public static final Conditional ENTITY;
     // @Format (if|if_not) dimension (overworld|the_nether|the_end) {}
     // @Format (while|while_not) <num>? dimension (overworld|the_nether|the_end) {}
     public static final Conditional DIMENSION;
-    // @Format (if|if_not) effect_amplifier <identifier> <comparator> {}
-    // @Format (while|while_not) <num>? effect_amplifier <identifier> <comparator> {}
+    // @Format (if|if_not) effect_amplifier <identifier> <comparator> <int> {}
+    // @Format (while|while_not) <num>? effect_amplifier<identifier> <comparator> <int> {}
     public static final Conditional EFFECT_AMPLIFIER;
-    // @Format (if|if_not) effect_duration <identifier> <comparator> {}
-    // @Format (while|while_not) <num>? effect_duration <identifier> <comparator> {}
+    // @Format (if|if_not) effect_duration <identifier> <comparator> <int> {}
+    // @Format (while|while_not) <num>? effect_duration<identifier> <comparator> <int> {}
     public static final Conditional EFFECT_DURATION;
     // @Format (if|if_not) in_game {}
     // @Format (while|while_not) <num>? in_game {}
@@ -308,31 +308,31 @@ public class Conditionals implements Global {
     // @Format (while|while_not) <num>? reference_entity <identifier> {}
     public static final Conditional REFERENCE_ENTITY;
 
-    // @Format (if|if_not) item_count <identifier> <comparator> {}
-    // @Format (if|if_not) item_count (mainhand|offhand) <comparator> {}
-    // @Format (while|while_not) <num>? item_count <identifier> <comparator> {}
-    // @Format (while|while_not) <num>? item_count (mainhand|offhand) <comparator> {}
+    // @Format (if|if_not) item_count <identifier> <comparator> <int> {}
+    // @Format (if|if_not) item_count (mainhand|offhand) <comparator> <int> {}
+    // @Format (while|while_not) <num>? item_count <identifier> <comparator> <int> {}
+    // @Format (while|while_not) <num>? item_count (mainhand|offhand) <comparator> <int> {}
     public static final Conditional ITEM_COUNT;
 
-    // @Format (if|if_not) item_durability <identifier> <comparator> {}
-    // @Format (if|if_not) item_durability (mainhand|offhand) <comparator> {}
-    // @Format (while|while_not) <num>? item_durability <identifier> <comparator> {}
-    // @Format (while|while_not) <num>? item_durability (mainhand|offhand) <comparator> {}
+    // @Format (if|if_not) item_durability <identifier> <comparator> <num> {}
+    // @Format (if|if_not) item_durability (mainhand|offhand) <comparator> <num> {}
+    // @Format (while|while_not) <num>? item_durability <identifier> <comparator> <num> {}
+    // @Format (while|while_not) <num>? item_durability (mainhand|offhand) <comparator> <num> {}
     public static final Conditional ITEM_DURABILITY;
 
-    // @Format (if|if_not) item_cooldown <identifier> <comparator> {}
-    // @Format (if|if_not) item_cooldown (mainhand|offhand) <comparator> {}
-    // @Format (while|while_not) <num>? item_cooldown <identifier> <comparator> {}
-    // @Format (while|while_not) <num>? item_cooldown (mainhand|offhand) <comparator> {}
+    // @Format (if|if_not) item_cooldown <identifier> <comparator> <num> {}
+    // @Format (if|if_not) item_cooldown (mainhand|offhand) <comparator> <num> {}
+    // @Format (while|while_not) <num>? item_cooldown <identifier> <comparator> <num> {}
+    // @Format (while|while_not) <num>? item_cooldown (mainhand|offhand) <comparator> <num> {}
     public static final Conditional ITEM_COOLDOWN;
     // @Format (if|if_not) gamemode (creative|survival|adventure|spectator) {}
     // @Format (while|while_not) <num>? gamemode (creative|survival|adventure|spectator) {}
     public static final Conditional GAMEMODE;
-    // @Format (if|if_not) ping <comparator> {}
-    // @Format (while|while_not) <num>? ping <comparator> {}
+    // @Format (if|if_not) ping <comparator> <int> {}
+    // @Format (while|while_not) <num>? ping <comparator> <int> {}
     public static final Conditional PING;
-    // @Format (if|if_not) fps <comparator> {}
-    // @Format (while|while_not) <num>? fps <comparator> {}
+    // @Format (if|if_not) fps <comparator> <int> {}
+    // @Format (while|while_not) <num>? fps <comparator> <int> {}
     public static final Conditional FPS;
     // @Format (if|if_not) line_of_sight {}
     // @Format (while|while_not) <num>? line_of_sight {}
@@ -358,11 +358,11 @@ public class Conditionals implements Global {
     // @Format (if|if_not) inventory_slot <int> <identifier> {}
     // @Format (while|while_not) inventory_slot <int> <identifier> {}
     public static final Conditional INVENTORY_SLOT;
-    // @Format (if|if_not) rot_x <comparator> {}
-    // @Format (while|while_not) rot_x <comparator> {}
+    // @Format (if|if_not) rot_x <comparator> <num> {}
+    // @Format (while|while_not) rot_x <comparator> <num> {}
     public static final Conditional ROT_X;
-    // @Format (if|if_not) rot_y <comparator> {}
-    // @Format (while|while_not) rot_y <comparator> {}
+    // @Format (if|if_not) rot_y <comparator> <num> {}
+    // @Format (while|while_not) rot_y <comparator> <num> {}
     public static final Conditional ROT_Y;
     // @Format (if|if_not) facing (north|south|east|west|up|down) {}
     // @Format (while|while_not) facing (north|south|east|west|up|down) {}

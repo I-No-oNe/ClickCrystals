@@ -52,7 +52,7 @@ public class AsCmd extends ScriptCommand implements ThenChainable {
                 referencing = true;
                 read.executeThenChain(false);
             }
-            default -> {}
+            default -> throw new IllegalArgumentException("unsupported operation");
         }
     }
 
@@ -74,5 +74,4 @@ public class AsCmd extends ScriptCommand implements ThenChainable {
         currentReference = null;
         referencing = false;
     }
-
 }
