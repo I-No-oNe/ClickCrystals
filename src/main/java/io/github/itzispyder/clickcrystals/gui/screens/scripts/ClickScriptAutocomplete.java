@@ -12,6 +12,9 @@ import io.github.itzispyder.clickcrystals.scripting.syntax.logic.OnEventCmd;
 import io.github.itzispyder.clickcrystals.util.minecraft.render.RenderUtils;
 import io.github.itzispyder.clickcrystals.util.misc.Dimensions;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.level.GameType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
@@ -34,7 +37,10 @@ public class ClickScriptAutocomplete implements Global {
     private static final int COLOR_TEXT = 0xFFAAAAAA;
     private static final int COLOR_HIGHLIGHT = 0xFFFFFFFF;
 
-    private static final List<String> COMMANDS, EVENT_TYPES, CONDITIONALS, MODULE_ACTIONS, CONFIG_TYPES, DEFINE_TYPES, INPUT_TYPES, DIMENSIONS, AS_TYPES, INTERACT_TYPES, CAMERA_TYPES;
+    private static final List<String> COMMANDS, EVENT_TYPES, CONDITIONALS, MODULE_ACTIONS,
+            CONFIG_TYPES, DEFINE_TYPES, INPUT_TYPES, DIMENSIONS,
+            AS_TYPES, INTERACT_TYPES, CAMERA_TYPES,
+            GAMEMODE_TYPES, DIRECTION_TYPES, HAND_TYPES;
     private static final Set<String> COMMAND_SET;
 
     static {
@@ -50,6 +56,9 @@ public class ClickScriptAutocomplete implements Global {
         AS_TYPES = enumValues(TargetType.ANY_ENTITY, TargetType.CLIENT, TargetType.NEAREST_ENTITY, TargetType.TARGET_ENTITY);
         INTERACT_TYPES = enumValues(TargetType.ANY_BLOCK, TargetType.ANY_ENTITY, TargetType.NEAREST_BLOCK, TargetType.NEAREST_ENTITY, TargetType.POSITION);
         CAMERA_TYPES = enumValues(TargetType.ANY_BLOCK, TargetType.ANY_ENTITY, TargetType.NEAREST_BLOCK, TargetType.NEAREST_ENTITY, TargetType.POLAR, TargetType.POSITION);
+        GAMEMODE_TYPES = enumValues(GameType.class);
+        DIRECTION_TYPES = enumValues(Direction.class);
+        HAND_TYPES = enumValues(InteractionHand.class);
     }
 
     private final List<String> suggestions = new ArrayList<>();
@@ -151,7 +160,7 @@ public class ClickScriptAutocomplete implements Global {
         if (condArity >= 0) {
             // Schema-driven: we know exactly how many tokens the conditional consumes.
             int inlineCmdPos = 2 + condArity;
-            if (tokenIdx < inlineCmdPos) return List.of();  // inside conditional args — no suggestions
+            if (tokenIdx < inlineCmdPos) return condArgPool(condName, tokenIdx - 2);
             if (tokenIdx == inlineCmdPos) return COMMANDS;   // cursor is on the inline command token
             return firstArgPool(tokens[inlineCmdPos].toLowerCase(), tokenIdx - inlineCmdPos);
         }
@@ -165,12 +174,13 @@ public class ClickScriptAutocomplete implements Global {
         return COMMANDS;
     }
 
-    // "while"/"while_not": while <num>? <conditional> {}
-    // The optional repeat count shifts the conditional name one position to the right.
+    // "while"/"while_not": while <num>? <conditional> [cond_args...] {}
     private List<String> resolveWhilePool(String[] tokens, int tokenIdx) {
         if (tokenIdx == 1) return CONDITIONALS;
-        if (tokenIdx == 2 && isNumber(tokens[1])) return CONDITIONALS;
-        return List.of();
+        boolean hasNum = isNumber(tokens[1]);
+        if (tokenIdx == 2 && hasNum) return CONDITIONALS;
+        int condPos = hasNum ? 2 : 1;
+        return condArgPool(tokens[condPos].toLowerCase(), tokenIdx - condPos - 1);
     }
 
     private static boolean isNumber(String s) {
@@ -180,6 +190,22 @@ public class ClickScriptAutocomplete implements Global {
         } catch (NumberFormatException e) {
             return false;
         }
+    }
+
+    // Returns the suggestion pool for a conditional's argument at the given index.
+    private static List<String> condArgPool(String cond, int argIdx) {
+        if (argIdx < 0) return List.of();
+        return switch (cond) {
+            case "input_active" -> argIdx == 0 ? INPUT_TYPES : List.of();
+            case "gamemode" -> argIdx == 0 ? GAMEMODE_TYPES : List.of();
+            case "facing", "target_block_face" -> argIdx == 0 ? DIRECTION_TYPES : List.of();
+            case "reference_entity" -> argIdx == 0 ? AS_TYPES : List.of();
+            case "dimension" -> argIdx == 0 ? DIMENSIONS : List.of();
+            case "item_count", "item_durability",
+                 "item_cooldown", "inventory_count",
+                 "hotbar_count" -> argIdx == 0 ? HAND_TYPES : List.of();
+            default -> List.of();
+        };
     }
 
     // Returns the suggestion pool for the first argument of a command, or nothing for any other position.
