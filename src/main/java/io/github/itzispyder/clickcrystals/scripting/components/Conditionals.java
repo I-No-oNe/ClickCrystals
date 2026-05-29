@@ -156,8 +156,8 @@ public class Conditionals implements Global {
     // @Format (if|if_not) targeting_fluid {}
     // @Format (while|while_not) <num>? targeting_fluid {}
     public static final Conditional TARGETING_FLUID;
-    // @Format (if|if_not) inventory_count <identifier> <comparator> <int> {}
-    // @Format (while|while_not) <num>? inventory_count <identifier> <comparator> <int> {}
+    // @Format (if|if_not) inventory_has <identifier> {}
+    // @Format (while|while_not) <num>? inventory_has <identifier> {}
     public static final Conditional INVENTORY_HAS;
     // @Format (if|if_not) inventory_count <identifier> <comparator> {}
     // @Format (while|while_not) <num>? inventory_count <identifier> <comparator> {}
