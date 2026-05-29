@@ -86,8 +86,6 @@ public class TurnToCmd extends ScriptCommand {
         }
     }
 
-    public enum Target { ANY_BLOCK, ANY_ENTITY, NEAREST_BLOCK, NEAREST_ENTITY, POLAR, POSITION }
-
     private void turn(Vec3 dest, Vec3 camPos, ScriptArgs args) {
         if (system.cameraRotator.isRunningTicket())
             return;

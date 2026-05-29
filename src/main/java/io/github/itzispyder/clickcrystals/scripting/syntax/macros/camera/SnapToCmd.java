@@ -84,8 +84,6 @@ public class SnapToCmd extends ScriptCommand {
         }
     }
 
-    public enum Target { ANY_BLOCK, ANY_ENTITY, NEAREST_BLOCK, NEAREST_ENTITY, POLAR, POSITION }
-
     private void snap(Vec3 dest, Vec3 camPos, ScriptArgs args) {
         TurnOptions options = new TurnOptions();
         ScriptArgsReader read = args.getReader();

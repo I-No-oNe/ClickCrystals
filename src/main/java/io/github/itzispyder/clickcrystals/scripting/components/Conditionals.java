@@ -1,10 +1,6 @@
 package io.github.itzispyder.clickcrystals.scripting.components;
 
 import io.github.itzispyder.clickcrystals.Global;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import io.github.itzispyder.clickcrystals.modules.Module;
 import io.github.itzispyder.clickcrystals.scripting.ScriptArgs;
 import io.github.itzispyder.clickcrystals.scripting.ScriptArgsReader;
@@ -24,8 +20,10 @@ import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 
 public class Conditionals implements Global {
@@ -33,7 +31,7 @@ public class Conditionals implements Global {
     // registry
 
     private static final Map<String, Conditional> registry = new HashMap<>();
-    private static final Map<String, Integer>    arity    = new HashMap<>();
+    private static final Map<String, Integer> arity = new HashMap<>();
 
     private static Conditional register(String name, Conditional conditional) {
         if (name != null && conditional != null && !name.isEmpty())
@@ -49,8 +47,66 @@ public class Conditionals implements Global {
         return Collections.unmodifiableSet(registry.keySet());
     }
 
+    private static final class ArityProbe extends ConditionEvaluationContext {
+        private static final ScriptArgs.Arg DUMMY = new ScriptArgs.Arg("0");
+        int max = -1;
+
+        ArityProbe(Entity e) {
+            super(e, null, 0);
+        }
+
+        @Override
+        public ScriptArgs.Arg get(int i) {
+            if (i > max) max = i;
+            return DUMMY;
+        }
+
+        @Override
+        public boolean match(int i, String s) {
+            if (i > max) max = i;
+            return false;
+        }
+
+        @Override
+        public ConditionEvaluationResult end(boolean r, boolean v) {
+            return new ConditionEvaluationResult(r, v);
+        }
+
+        @Override
+        public ConditionEvaluationResult end(boolean v) {
+            return new ConditionEvaluationResult(false, v);
+        }
+
+        @Override
+        public ConditionEvaluationContext assertClientPlayer() {
+            return this;
+        }
+    }
+
+    private static int probeArity(Conditional cond) {
+        if (cond == null) return -1;
+        ArityProbe p = new ArityProbe(null);
+        try {
+            cond.evaluate(p);
+        } catch (Exception ignored) {
+        }
+        if (p.max >= 0) return p.max + 1;       // get() was reached — correct regardless of entity
+        if (mc.player == null) return -1;        // entity needed but player unavailable — retry later
+        p = new ArityProbe(mc.player);
+        try {
+            cond.evaluate(p);
+        } catch (Exception ignored) {
+        }
+        return p.max + 1;
+    }
+
     public static int getArity(String name) {
-        return arity.getOrDefault(name.toLowerCase(), -1);
+        String key = name.toLowerCase();
+        Integer cached = arity.get(key);
+        if (cached != null) return cached;
+        int result = probeArity(registry.get(key));
+        if (result >= 0) arity.put(key, result);
+        return result;
     }
 
     public static ConditionEvaluationResult evaluate(Entity ref, ScriptArgs args, int beginIndex) {
@@ -103,8 +159,8 @@ public class Conditionals implements Global {
     // @Format (if|if_not) inventory_has <identifier> {}
     // @Format (while|while_not) <num>? inventory_has <identifier> {}
     public static final Conditional INVENTORY_HAS;
-    // @Format (if|if_not) inventory_count <identifier> <comparator> <int> {}
-    // @Format (while|while_not) <num>? inventory_count <identifier> <comparator> <int> {}
+    // @Format (if|if_not) inventory_count <identifier> <comparator> {}
+    // @Format (while|while_not) <num>? inventory_count <identifier> <comparator> {}
     public static final Conditional INVENTORY_COUNT;
     // @Format (if|if_not) equipment_has <identifier> {}
     // @Format (while|while_not) <num>? equipment_has <identifier> {}
@@ -112,8 +168,8 @@ public class Conditionals implements Global {
     // @Format (if|if_not) hotbar_has <identifier> {}
     // @Format (while|while_not) <num>? hotbar_has <identifier> {}
     public static final Conditional HOTBAR_HAS;
-    // @Format (if|if_not) hotbar_count <identifier> <comparator> <int> {}
-    // @Format (while|while_not) <num>? hotbar_count <identifier> <comparator> <int> {}
+    // @Format (if|if_not) hotbar_count <identifier> <comparator> {}
+    // @Format (while|while_not) <num>? hotbar_count <identifier> <comparator> {}
     public static final Conditional HOTBAR_COUNT;
 
     // @Format (if|if_not) input_active <input> {}
@@ -128,44 +184,44 @@ public class Conditionals implements Global {
     // @Format (if|if_not) entity_in_range <identifier> <num> {}
     // @Format (while|while_not) <num>? entity_in_range <identifier> <num> {}
     public static final Conditional ENTITY_IN_RANGE;
-    // @Format (if|if_not) block_in_range <identifier> <num> {}
-    // @Format (while|while_not) <num>? block_in_range <identifier> <num> {}
+    // @Format (if|if_not) block_in_fov <identifier> <num> {}
+    // @Format (while|while_not) <num>? block_in_fov <identifier> <num> {}
     public static final Conditional BLOCK_IN_FOV;
     // @Format (if|if_not) entity_in_fov <identifier> <num> {}
     // @Format (while|while_not) <num>? entity_in_fov <identifier> <num> {}
     public static final Conditional ENTITY_IN_FOV;
-    // @Format (if|if_not) attack_progress <comparator> <num> {}
-    // @Format (while|while_not) <num>? attack_progress <comparator> <num> {}
+    // @Format (if|if_not) attack_progress <comparator> {}
+    // @Format (while|while_not) <num>? attack_progress <comparator> {}
     public static final Conditional ATTACK_PROGRESS;
-    // @Format (if|if_not) health <comparator> <num> {}
-    // @Format (while|while_not) <num>? health <comparator> <num> {}
+    // @Format (if|if_not) health <comparator> {}
+    // @Format (while|while_not) <num>? health <comparator> {}
     public static final Conditional HEALTH;
-    // @Format (if|if_not) hunger <comparator> <num> {}
-    // @Format (while|while_not) <num>? hunger <comparator> <num> {}
+    // @Format (if|if_not) hunger <comparator> {}
+    // @Format (while|while_not) <num>? hunger <comparator> {}
     public static final Conditional HUNGER;
-    // @Format (if|if_not) hurt_time <comparator> <int> {}
-    // @Format (while|while_not) <num>? hurt_time <comparator> <int> {}
+    // @Format (if|if_not) hurt_time <comparator> {}
+    // @Format (while|while_not) <num>? hurt_time <comparator> {}
     public static final Conditional HURT_TIME;
-    // @Format (if|if_not) armor <comparator> <int> {}
-    // @Format (while|while_not) <num>? armor <comparator> <int> {}
+    // @Format (if|if_not) armor <comparator> {}
+    // @Format (while|while_not) <num>? armor <comparator> {}
     public static final Conditional ARMOR;
-    // @Format (if|if_not) pos_x <comparator> <num> {}
-    // @Format (while|while_not) <num>? pos_x <comparator> <num> {}
+    // @Format (if|if_not) pos_x <comparator> {}
+    // @Format (while|while_not) <num>? pos_x <comparator> {}
     public static final Conditional POS_X;
-    // @Format (if|if_not) pos_y <comparator> <num> {}
-    // @Format (while|while_not) <num>? pos_y <comparator> <num> {}
+    // @Format (if|if_not) pos_y <comparator> {}
+    // @Format (while|while_not) <num>? pos_y <comparator> {}
     public static final Conditional POS_Y;
-    // @Format (if|if_not) pos_z <comparator> <num> {}
-    // @Format (while|while_not) <num>? pos_z <comparator> <num> {}
+    // @Format (if|if_not) pos_z <comparator> {}
+    // @Format (while|while_not) <num>? pos_z <comparator> {}
     public static final Conditional POS_Z;
-    // @Format (if|if_not) vel_x <comparator> <num> {}
-    // @Format (while|while_not) <num>? vel_x <comparator> <num> {}
+    // @Format (if|if_not) vel_x <comparator> {}
+    // @Format (while|while_not) <num>? vel_x <comparator> {}
     public static final Conditional VEL_X;
-    // @Format (if|if_not) vel_y <comparator> <num> {}
-    // @Format (while|while_not) <num>? vel_y <comparator> <num> {}
+    // @Format (if|if_not) vel_y <comparator> {}
+    // @Format (while|while_not) <num>? vel_y <comparator> {}
     public static final Conditional VEL_Y;
-    // @Format (if|if_not) vel_z <comparator> <num> {}
-    // @Format (while|while_not) <num>? vel_z <comparator> <num> {}
+    // @Format (if|if_not) vel_z <comparator> {}
+    // @Format (while|while_not) <num>? vel_z <comparator> {}
     public static final Conditional VEL_Z;
     // @Format (if|if_not) module_enabled ... {}
     // @Format (while|while_not) <num>? module_enabled ... {}
@@ -173,20 +229,20 @@ public class Conditionals implements Global {
     // @Format (if|if_not) module_disabled ... {}
     // @Format (while|while_not) <num>? module_disabled ... {}
     public static final Conditional MODULE_DISABLED;
-    // @Format (if|if_not) block <x> <y> <z> {}
-    // @Format (while|while_not) <num>? block <x> <y> <z> {}
+    // @Format (if|if_not) block <x> <y> <z> <identifier> {}
+    // @Format (while|while_not) <num>? block <x> <y> <z> <identifier> {}
     public static final Conditional BLOCK;
-    // @Format (if|if_not) entity <x> <y> <z> {}
-    // @Format (while|while_not) <num>? entity <x> <y> <z> {}
+    // @Format (if|if_not) entity <x> <y> <z> <identifier> {}
+    // @Format (while|while_not) <num>? entity <x> <y> <z> <identifier> {}
     public static final Conditional ENTITY;
     // @Format (if|if_not) dimension (overworld|the_nether|the_end) {}
     // @Format (while|while_not) <num>? dimension (overworld|the_nether|the_end) {}
     public static final Conditional DIMENSION;
-    // @Format (if|if_not) effect_amplifier <identifier> <comparator> <int> {}
-    // @Format (while|while_not) <num>? <identifier> <comparator> <int> {}
+    // @Format (if|if_not) effect_amplifier <identifier> <comparator> {}
+    // @Format (while|while_not) <num>? effect_amplifier <identifier> <comparator> {}
     public static final Conditional EFFECT_AMPLIFIER;
-    // @Format (if|if_not) effect_duration <identifier> <comparator> <int> {}
-    // @Format (while|while_not) <num>? <identifier> <comparator> <int> {}
+    // @Format (if|if_not) effect_duration <identifier> <comparator> {}
+    // @Format (while|while_not) <num>? effect_duration <identifier> <comparator> {}
     public static final Conditional EFFECT_DURATION;
     // @Format (if|if_not) in_game {}
     // @Format (while|while_not) <num>? in_game {}
@@ -252,31 +308,31 @@ public class Conditionals implements Global {
     // @Format (while|while_not) <num>? reference_entity <identifier> {}
     public static final Conditional REFERENCE_ENTITY;
 
-    // @Format (if|if_not) item_count <identifier> <comparator> <int> {}
-    // @Format (if|if_not) item_count (mainhand|offhand) <comparator> <int> {}
-    // @Format (while|while_not) <num>? item_count <identifier> <comparator> <int> {}
-    // @Format (while|while_not) <num>? item_count (mainhand|offhand) <comparator> <int> {}
+    // @Format (if|if_not) item_count <identifier> <comparator> {}
+    // @Format (if|if_not) item_count (mainhand|offhand) <comparator> {}
+    // @Format (while|while_not) <num>? item_count <identifier> <comparator> {}
+    // @Format (while|while_not) <num>? item_count (mainhand|offhand) <comparator> {}
     public static final Conditional ITEM_COUNT;
 
-    // @Format (if|if_not) item_durability <identifier> <comparator> <num> {}
-    // @Format (if|if_not) item_durability (mainhand|offhand) <comparator> <num> {}
-    // @Format (while|while_not) <num>? item_durability <identifier> <comparator> <num> {}
-    // @Format (while|while_not) <num>? item_durability (mainhand|offhand) <comparator> <num> {}
+    // @Format (if|if_not) item_durability <identifier> <comparator> {}
+    // @Format (if|if_not) item_durability (mainhand|offhand) <comparator> {}
+    // @Format (while|while_not) <num>? item_durability <identifier> <comparator> {}
+    // @Format (while|while_not) <num>? item_durability (mainhand|offhand) <comparator> {}
     public static final Conditional ITEM_DURABILITY;
 
-    // @Format (if|if_not) item_cooldown <identifier> <comparator> <num> {}
-    // @Format (if|if_not) item_cooldown (mainhand|offhand) <comparator> <num> {}
-    // @Format (while|while_not) <num>? item_cooldown <identifier> <comparator> <num> {}
-    // @Format (while|while_not) <num>? item_cooldown (mainhand|offhand) <comparator> <num> {}
+    // @Format (if|if_not) item_cooldown <identifier> <comparator> {}
+    // @Format (if|if_not) item_cooldown (mainhand|offhand) <comparator> {}
+    // @Format (while|while_not) <num>? item_cooldown <identifier> <comparator> {}
+    // @Format (while|while_not) <num>? item_cooldown (mainhand|offhand) <comparator> {}
     public static final Conditional ITEM_COOLDOWN;
     // @Format (if|if_not) gamemode (creative|survival|adventure|spectator) {}
     // @Format (while|while_not) <num>? gamemode (creative|survival|adventure|spectator) {}
     public static final Conditional GAMEMODE;
-    // @Format (if|if_not) ping <comparator> <int> {}
-    // @Format (while|while_not) <num>? ping <comparator> <int> {}
+    // @Format (if|if_not) ping <comparator> {}
+    // @Format (while|while_not) <num>? ping <comparator> {}
     public static final Conditional PING;
-    // @Format (if|if_not) fps <comparator> <int> {}
-    // @Format (while|while_not) <num>? fps <comparator> <int> {}
+    // @Format (if|if_not) fps <comparator> {}
+    // @Format (while|while_not) <num>? fps <comparator> {}
     public static final Conditional FPS;
     // @Format (if|if_not) line_of_sight {}
     // @Format (while|while_not) <num>? line_of_sight {}
@@ -302,11 +358,11 @@ public class Conditionals implements Global {
     // @Format (if|if_not) inventory_slot <int> <identifier> {}
     // @Format (while|while_not) inventory_slot <int> <identifier> {}
     public static final Conditional INVENTORY_SLOT;
-    // @Format (if|if_not) rot_x <comparator> <num> {}
-    // @Format (while|while_not) rot_x <comparator> <num> {}
+    // @Format (if|if_not) rot_x <comparator> {}
+    // @Format (while|while_not) rot_x <comparator> {}
     public static final Conditional ROT_X;
-    // @Format (if|if_not) rot_y <comparator> <num> {}
-    // @Format (while|while_not) rot_y <comparator> <num> {}
+    // @Format (if|if_not) rot_y <comparator> {}
+    // @Format (while|while_not) rot_y <comparator> {}
     public static final Conditional ROT_Y;
     // @Format (if|if_not) facing (north|south|east|west|up|down) {}
     // @Format (while|while_not) facing (north|south|east|west|up|down) {}
@@ -450,28 +506,5 @@ public class Conditionals implements Global {
         INVISIBLE = register("invisible", ctx -> ctx.end(true, ctx.entity.isInvisible()));
         INVENTORY_SLOT = register("inventory_slot", new ConditionalInventorySlot());
         FACING = register("facing", ctx -> ctx.end(true, ctx.entity.getNearestViewDirection() == ctx.get(0).toEnum(Direction.class)));
-
-        // Arity: number of tokens each conditional consumes before the inline command / block opener.
-        for (String s : List.of("true","false","alive","blocking","colliding","colliding_horizontally",
-                "colliding_vertically","dead","falling","flying","frozen","gliding","in_game",
-                "in_screen","in_singleplayer","invisible","jumping","line_of_sight","moving",
-                "on_fire","on_ground","playing","sneaking","sprinting","swimming",
-                "targeting_block","targeting_entity","targeting_fluid"))
-            arity.put(s, 0);
-        for (String s : List.of("chance_of","cursor_item","dimension","equipment_has","facing",
-                "gamemode","holding","hotbar_has","hovering_over","input_active","inventory_has",
-                "module_disabled","module_enabled","off_holding","reference_entity",
-                "target_block","target_block_face","target_entity","target_fluid"))
-            arity.put(s, 1);
-        for (String s : List.of("armor","attack_progress","block_in_fov","block_in_range",
-                "entity_in_fov","entity_in_range","fps","health","hunger","hurt_time",
-                "inventory_slot","ping","pos_x","pos_y","pos_z","rot_x","rot_y",
-                "vel_x","vel_y","vel_z"))
-            arity.put(s, 2);
-        for (String s : List.of("effect_amplifier","effect_duration","hotbar_count",
-                "inventory_count","item_cooldown","item_count","item_durability"))
-            arity.put(s, 3);
-        arity.put("block",  4);
-        arity.put("entity", 4);
     }
 }

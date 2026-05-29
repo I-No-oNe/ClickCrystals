@@ -52,7 +52,7 @@ public class AsCmd extends ScriptCommand implements ThenChainable {
                 referencing = true;
                 read.executeThenChain(false);
             }
-            default -> throw new IllegalArgumentException("unsupported operation");
+            default -> {}
         }
     }
 
@@ -75,5 +75,4 @@ public class AsCmd extends ScriptCommand implements ThenChainable {
         referencing = false;
     }
 
-    public enum Target { ANY_ENTITY, CLIENT, NEAREST_ENTITY, TARGET_ENTITY }
 }

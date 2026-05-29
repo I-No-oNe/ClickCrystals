@@ -53,6 +53,8 @@ public class ClickScriptIDE extends DefaultBase {
         Function<ChatColor, Function<String, String>> applyUnderline = c -> s -> "%s§n%s§r%s".formatted(c, s, og);
         Function<ChatColor, Function<String, String>> applyItalic = c -> s -> "%s§o%s§r%s".formatted(c, s, og);
 
+        this.put(s -> s.contains("\""), applyColor.apply(ChatColor.DARK_GREEN));
+        this.put(s -> s.startsWith("@"), applyColor.apply(ChatColor.AQUA));
         this.put(s -> StringUtils.startsWithAny(s, ":", "#"), applyColor.apply(ChatColor.DARK_GREEN));
         this.put(s -> s.replaceAll("[0-9><=!.+~-]", "").isEmpty(), applyColor.apply(ChatColor.DARK_AQUA));
         this.put(ChatColor.GRAY, "then", "back", "all");

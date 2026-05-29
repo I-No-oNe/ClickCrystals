@@ -4,14 +4,11 @@ import io.github.itzispyder.clickcrystals.Global;
 import io.github.itzispyder.clickcrystals.scripting.ClickScript;
 import io.github.itzispyder.clickcrystals.scripting.components.Conditionals;
 import io.github.itzispyder.clickcrystals.scripting.syntax.InputType;
+import io.github.itzispyder.clickcrystals.scripting.syntax.TargetType;
 import io.github.itzispyder.clickcrystals.scripting.syntax.client.ConfigCmd;
 import io.github.itzispyder.clickcrystals.scripting.syntax.client.DefineCmd;
 import io.github.itzispyder.clickcrystals.scripting.syntax.client.ModuleCmd;
-import io.github.itzispyder.clickcrystals.scripting.syntax.logic.AsCmd;
 import io.github.itzispyder.clickcrystals.scripting.syntax.logic.OnEventCmd;
-import io.github.itzispyder.clickcrystals.scripting.syntax.macros.InteractCmd;
-import io.github.itzispyder.clickcrystals.scripting.syntax.macros.camera.SnapToCmd;
-import io.github.itzispyder.clickcrystals.scripting.syntax.macros.camera.TurnToCmd;
 import io.github.itzispyder.clickcrystals.util.minecraft.render.RenderUtils;
 import io.github.itzispyder.clickcrystals.util.misc.Dimensions;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -37,24 +34,22 @@ public class ClickScriptAutocomplete implements Global {
     private static final int COLOR_TEXT = 0xFFAAAAAA;
     private static final int COLOR_HIGHLIGHT = 0xFFFFFFFF;
 
-    private static final List<String> COMMANDS, EVENT_TYPES, CONDITIONALS, MODULE_ACTIONS,
-                                      CONFIG_TYPES, DEFINE_TYPES, INPUT_TYPES, DIMENSIONS,
-                                      AS_TYPES, SNAP_TYPES, INTERACT_TYPES;
+    private static final List<String> COMMANDS, EVENT_TYPES, CONDITIONALS, MODULE_ACTIONS, CONFIG_TYPES, DEFINE_TYPES, INPUT_TYPES, DIMENSIONS, AS_TYPES, INTERACT_TYPES, CAMERA_TYPES;
     private static final Set<String> COMMAND_SET;
 
     static {
-        COMMANDS       = sorted(Arrays.asList(ClickScript.collectNames()));
-        COMMAND_SET    = new HashSet<>(COMMANDS);
-        EVENT_TYPES    = enumValues(OnEventCmd.EventType.class);
-        CONDITIONALS   = sorted(new ArrayList<>(Conditionals.registeredNames()));
+        COMMANDS = sorted(Arrays.asList(ClickScript.collectNames()));
+        COMMAND_SET = new HashSet<>(COMMANDS);
+        EVENT_TYPES = enumValues(OnEventCmd.EventType.class);
+        CONDITIONALS = sorted(new ArrayList<>(Conditionals.registeredNames()));
         MODULE_ACTIONS = enumValues(ModuleCmd.Action.class);
-        CONFIG_TYPES   = enumValues(ConfigCmd.Type.class);
-        DEFINE_TYPES   = enumValues(DefineCmd.Type.class);
-        INPUT_TYPES    = enumValues(InputType.class);
-        DIMENSIONS     = enumValues(Dimensions.class);
-        AS_TYPES       = enumValues(AsCmd.Target.class);
-        SNAP_TYPES     = enumValues(SnapToCmd.Target.class);
-        INTERACT_TYPES = enumValues(InteractCmd.Target.class);
+        CONFIG_TYPES = enumValues(ConfigCmd.Type.class);
+        DEFINE_TYPES = enumValues(DefineCmd.Type.class);
+        INPUT_TYPES = enumValues(InputType.class);
+        DIMENSIONS = enumValues(Dimensions.class);
+        AS_TYPES = enumValues(TargetType.ANY_ENTITY, TargetType.CLIENT, TargetType.NEAREST_ENTITY, TargetType.TARGET_ENTITY);
+        INTERACT_TYPES = enumValues(TargetType.ANY_BLOCK, TargetType.ANY_ENTITY, TargetType.NEAREST_BLOCK, TargetType.NEAREST_ENTITY, TargetType.POSITION);
+        CAMERA_TYPES = enumValues(TargetType.ANY_BLOCK, TargetType.ANY_ENTITY, TargetType.NEAREST_BLOCK, TargetType.NEAREST_ENTITY, TargetType.POLAR, TargetType.POSITION);
     }
 
     private final List<String> suggestions = new ArrayList<>();
@@ -63,6 +58,11 @@ public class ClickScriptAutocomplete implements Global {
 
     private static <E extends Enum<E>> List<String> enumValues(Class<E> cls) {
         return sorted(Arrays.stream(cls.getEnumConstants()).map(e -> e.name().toLowerCase()).toList());
+    }
+
+    @SafeVarargs
+    private static <E extends Enum<E>> List<String> enumValues(E... values) {
+        return sorted(Arrays.stream(values).map(e -> e.name().toLowerCase()).toList());
     }
 
     private static List<String> sorted(List<String> list) {
@@ -101,10 +101,43 @@ public class ClickScriptAutocomplete implements Global {
     private List<String> resolvePool(String[] tokens, int tokenIdx) {
         if (tokenIdx == 0) return COMMANDS;
         String cmd = tokens[0].toLowerCase();
-        if (cmd.equals("on"))                                return tokenIdx == 1 ? EVENT_TYPES : List.of();
-        if (cmd.equals("if") || cmd.equals("if_not"))       return resolveIfPool(tokens, tokenIdx);
+        if (cmd.equals("on")) return resolveOnPool(tokens, tokenIdx);
+        if (cmd.equals("if") || cmd.equals("if_not")) return resolveIfPool(tokens, tokenIdx);
         if (cmd.equals("while") || cmd.equals("while_not")) return resolveWhilePool(tokens, tokenIdx);
         return firstArgPool(cmd, tokenIdx);
+    }
+
+    // "on": on <event_type> [event_args...] <inline_command> [cmd_args...]
+    // Each event type consumes a fixed number of args before the inline command.
+    private List<String> resolveOnPool(String[] tokens, int tokenIdx) {
+        if (tokenIdx == 1) return EVENT_TYPES;
+        String event = tokens[1].toLowerCase();
+
+        // variable-arity events (key names, packet names): scan for inline command
+        boolean variable = switch (event) {
+            case "key_press", "key_release", "packet_receive", "packet_send" -> true;
+            default -> false;
+        };
+        if (variable) {
+            for (int i = 2; i < tokenIdx; i++) {
+                if (COMMAND_SET.contains(tokens[i].toLowerCase()))
+                    return firstArgPool(tokens[i].toLowerCase(), tokenIdx - i);
+            }
+            return COMMANDS;
+        }
+
+        // fixed-arity: determine how many tokens the event itself consumes
+        int arity = switch (event) {
+            case "chat_receive", "chat_send", "sound_play", "mouse_click", "mouse_release" -> 1;
+            // optional <int> prefix for tick events — check if token 2 is a number
+            case "tick", "pre_tick", "post_tick" -> tokens.length > 2 && isNumber(tokens[2]) ? 1 : 0;
+            default -> 0;
+        };
+
+        int inlineCmdPos = 2 + arity;
+        if (tokenIdx < inlineCmdPos) return List.of();
+        if (tokenIdx == inlineCmdPos) return COMMANDS;
+        return firstArgPool(tokens[inlineCmdPos].toLowerCase(), tokenIdx - inlineCmdPos);
     }
 
     // "if"/"if_not": if <conditional> [cond_args...] <inline_command> [cmd_args...]
@@ -112,13 +145,13 @@ public class ClickScriptAutocomplete implements Global {
     private List<String> resolveIfPool(String[] tokens, int tokenIdx) {
         if (tokenIdx == 1) return CONDITIONALS;
 
-        String condName   = tokens[1].toLowerCase();
-        int    condArity  = Conditionals.getArity(condName);
+        String condName = tokens[1].toLowerCase();
+        int condArity = Conditionals.getArity(condName);
 
         if (condArity >= 0) {
             // Schema-driven: we know exactly how many tokens the conditional consumes.
             int inlineCmdPos = 2 + condArity;
-            if (tokenIdx < inlineCmdPos)  return List.of();  // inside conditional args — no suggestions
+            if (tokenIdx < inlineCmdPos) return List.of();  // inside conditional args — no suggestions
             if (tokenIdx == inlineCmdPos) return COMMANDS;   // cursor is on the inline command token
             return firstArgPool(tokens[inlineCmdPos].toLowerCase(), tokenIdx - inlineCmdPos);
         }
@@ -141,7 +174,12 @@ public class ClickScriptAutocomplete implements Global {
     }
 
     private static boolean isNumber(String s) {
-        try { Double.parseDouble(s); return true; } catch (NumberFormatException e) { return false; }
+        try {
+            Double.parseDouble(s);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
     // Returns the suggestion pool for the first argument of a command, or nothing for any other position.
@@ -149,16 +187,16 @@ public class ClickScriptAutocomplete implements Global {
     private static List<String> firstArgPool(String cmd, int idx) {
         if (idx != 1) return List.of();
         return switch (cmd) {
-            case "module"                               -> MODULE_ACTIONS;
-            case "config"                               -> CONFIG_TYPES;
-            case "define", "def"                       -> DEFINE_TYPES;
+            case "module" -> MODULE_ACTIONS;
+            case "config" -> CONFIG_TYPES;
+            case "define", "def" -> DEFINE_TYPES;
             case "input", "hold_input", "toggle_input" -> INPUT_TYPES;
-            case "interact"                            -> INTERACT_TYPES;
-            case "dimension"                           -> DIMENSIONS;
-            case "as"                                  -> AS_TYPES;
-            case "snap_to", "turn_to"                  -> SNAP_TYPES;
-            case "while", "while_not"                  -> CONDITIONALS;
-            default                                    -> List.of();
+            case "interact" -> INTERACT_TYPES;
+            case "dimension" -> DIMENSIONS;
+            case "as" -> AS_TYPES;
+            case "snap_to", "turn_to" -> CAMERA_TYPES;
+            case "while", "while_not" -> CONDITIONALS;
+            default -> List.of();
         };
     }
 
