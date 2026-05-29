@@ -9,11 +9,11 @@ import io.github.itzispyder.clickcrystals.scripting.syntax.client.ConfigCmd;
 import io.github.itzispyder.clickcrystals.scripting.syntax.client.DefineCmd;
 import io.github.itzispyder.clickcrystals.scripting.syntax.client.ModuleCmd;
 import io.github.itzispyder.clickcrystals.scripting.syntax.logic.OnEventCmd;
+import io.github.itzispyder.clickcrystals.client.networking.PacketMapper;
 import io.github.itzispyder.clickcrystals.util.minecraft.render.RenderUtils;
 import io.github.itzispyder.clickcrystals.util.misc.Dimensions;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.core.Direction;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.level.GameType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
@@ -37,10 +37,7 @@ public class ClickScriptAutocomplete implements Global {
     private static final int COLOR_TEXT = 0xFFAAAAAA;
     private static final int COLOR_HIGHLIGHT = 0xFFFFFFFF;
 
-    private static final List<String> COMMANDS, EVENT_TYPES, CONDITIONALS, MODULE_ACTIONS,
-            CONFIG_TYPES, DEFINE_TYPES, INPUT_TYPES, DIMENSIONS,
-            AS_TYPES, INTERACT_TYPES, CAMERA_TYPES,
-            GAMEMODE_TYPES, DIRECTION_TYPES, HAND_TYPES;
+    private static final List<String> COMMANDS, EVENT_TYPES, CONDITIONALS, MODULE_ACTIONS, CONFIG_TYPES, DEFINE_TYPES, INPUT_TYPES, DIMENSIONS, AS_TYPES, INTERACT_TYPES, CAMERA_TYPES, GAMEMODE_TYPES, DIRECTION_TYPES, HAND_TYPES, PACKET_TYPES, PACKET_C2S, PACKET_S2C, CANCELABLE_INPUT_TYPES;
     private static final Set<String> COMMAND_SET;
 
     static {
@@ -58,7 +55,13 @@ public class ClickScriptAutocomplete implements Global {
         CAMERA_TYPES = enumValues(TargetType.ANY_BLOCK, TargetType.ANY_ENTITY, TargetType.NEAREST_BLOCK, TargetType.NEAREST_ENTITY, TargetType.POLAR, TargetType.POSITION);
         GAMEMODE_TYPES = enumValues(GameType.class);
         DIRECTION_TYPES = enumValues(Direction.class);
-        HAND_TYPES = enumValues(InteractionHand.class);
+        HAND_TYPES = List.of("mainhand", "offhand");
+        PACKET_TYPES = List.of("c2s", "s2c");
+        PACKET_C2S = sorted(PacketMapper.C2S.values().stream().map(PacketMapper.Info::id).toList());
+        PACKET_S2C = sorted(PacketMapper.S2C.values().stream().map(PacketMapper.Info::id).toList());
+        CANCELABLE_INPUT_TYPES = sorted(new ArrayList<>(INPUT_TYPES) {{
+            add("cancel");
+        }});
     }
 
     private final List<String> suggestions = new ArrayList<>();
@@ -113,6 +116,12 @@ public class ClickScriptAutocomplete implements Global {
         if (cmd.equals("on")) return resolveOnPool(tokens, tokenIdx);
         if (cmd.equals("if") || cmd.equals("if_not")) return resolveIfPool(tokens, tokenIdx);
         if (cmd.equals("while") || cmd.equals("while_not")) return resolveWhilePool(tokens, tokenIdx);
+        if ((cmd.equals("cancel_packet") || cmd.equals("uncancel_packet")) && tokenIdx == 2)
+            return switch (tokens[1].toLowerCase()) {
+                case "c2s" -> PACKET_C2S;
+                case "s2c" -> PACKET_S2C;
+                default -> List.of();
+            };
         return firstArgPool(cmd, tokenIdx);
     }
 
@@ -201,9 +210,8 @@ public class ClickScriptAutocomplete implements Global {
             case "facing", "target_block_face" -> argIdx == 0 ? DIRECTION_TYPES : List.of();
             case "reference_entity" -> argIdx == 0 ? AS_TYPES : List.of();
             case "dimension" -> argIdx == 0 ? DIMENSIONS : List.of();
-            case "item_count", "item_durability",
-                 "item_cooldown", "inventory_count",
-                 "hotbar_count" -> argIdx == 0 ? HAND_TYPES : List.of();
+            case "item_count", "item_durability", "item_cooldown", "inventory_count", "hotbar_count" ->
+                    argIdx == 0 ? HAND_TYPES : List.of();
             default -> List.of();
         };
     }
@@ -216,8 +224,12 @@ public class ClickScriptAutocomplete implements Global {
             case "module" -> MODULE_ACTIONS;
             case "config" -> CONFIG_TYPES;
             case "define", "def" -> DEFINE_TYPES;
-            case "input", "hold_input", "toggle_input" -> INPUT_TYPES;
-            case "interact" -> INTERACT_TYPES;
+            case "input" -> INPUT_TYPES;
+            case "hold_input", "toggle_input" -> CANCELABLE_INPUT_TYPES;
+            case "interact", "damage" -> INTERACT_TYPES;
+            case "cancel_packet", "uncancel_packet" -> PACKET_TYPES;
+            case "switch" -> List.of("back");
+            case "drop" -> List.of("all");
             case "dimension" -> DIMENSIONS;
             case "as" -> AS_TYPES;
             case "snap_to", "turn_to" -> CAMERA_TYPES;
