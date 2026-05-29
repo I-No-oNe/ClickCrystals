@@ -194,7 +194,7 @@ public class Conditionals implements Global {
     // @Format (while|while_not) <num>? attack_progress <comparator> <num> {}
     public static final Conditional ATTACK_PROGRESS;
     // @Format (if|if_not) health <comparator> <num> {}
-    // @Format (while|while_not) <num>? health <comparator> <num> {
+    // @Format (while|while_not) <num>? health <comparator> <num> {}
     public static final Conditional HEALTH;
     // @Format (if|if_not) hunger <comparator> <num> {}
     // @Format (while|while_not) <num>? hunger <comparator> <num> {}
