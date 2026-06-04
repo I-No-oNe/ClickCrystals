@@ -20,8 +20,10 @@ import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 
 public class Conditionals implements Global {
@@ -29,6 +31,7 @@ public class Conditionals implements Global {
     // registry
 
     private static final Map<String, Conditional> registry = new HashMap<>();
+    private static final Map<String, Integer> arity = new HashMap<>();
 
     private static Conditional register(String name, Conditional conditional) {
         if (name != null && conditional != null && !name.isEmpty())
@@ -38,6 +41,72 @@ public class Conditionals implements Global {
 
     public static boolean isRegistered(String name) {
         return registry.containsKey(name.toLowerCase());
+    }
+
+    public static Set<String> registeredNames() {
+        return Collections.unmodifiableSet(registry.keySet());
+    }
+
+    private static final class ArityProbe extends ConditionEvaluationContext {
+        private static final ScriptArgs.Arg DUMMY = new ScriptArgs.Arg("0");
+        int max = -1;
+
+        ArityProbe(Entity e) {
+            super(e, null, 0);
+        }
+
+        @Override
+        public ScriptArgs.Arg get(int i) {
+            if (i > max) max = i;
+            return DUMMY;
+        }
+
+        @Override
+        public boolean match(int i, String s) {
+            if (i > max) max = i;
+            return false;
+        }
+
+        @Override
+        public ConditionEvaluationResult end(boolean r, boolean v) {
+            return new ConditionEvaluationResult(r, v);
+        }
+
+        @Override
+        public ConditionEvaluationResult end(boolean v) {
+            return new ConditionEvaluationResult(false, v);
+        }
+
+        @Override
+        public ConditionEvaluationContext assertClientPlayer() {
+            return this;
+        }
+    }
+
+    private static int probeArity(Conditional cond) {
+        if (cond == null) return -1;
+        ArityProbe p = new ArityProbe(null);
+        try {
+            cond.evaluate(p);
+        } catch (Exception ignored) {
+        }
+        if (p.max >= 0) return p.max + 1;       // get() was reached — correct regardless of entity
+        if (mc.player == null) return -1;        // entity needed but player unavailable — retry later
+        p = new ArityProbe(mc.player);
+        try {
+            cond.evaluate(p);
+        } catch (Exception ignored) {
+        }
+        return p.max + 1;
+    }
+
+    public static int getArity(String name) {
+        String key = name.toLowerCase();
+        Integer cached = arity.get(key);
+        if (cached != null) return cached;
+        int result = probeArity(registry.get(key));
+        if (result >= 0) arity.put(key, result);
+        return result;
     }
 
     public static ConditionEvaluationResult evaluate(Entity ref, ScriptArgs args, int beginIndex) {
@@ -90,8 +159,8 @@ public class Conditionals implements Global {
     // @Format (if|if_not) inventory_has <identifier> {}
     // @Format (while|while_not) <num>? inventory_has <identifier> {}
     public static final Conditional INVENTORY_HAS;
-    // @Format (if|if_not) inventory_count <identifier> <comparator> <int> {}
-    // @Format (while|while_not) <num>? inventory_count <identifier> <comparator> <int> {}
+    // @Format (if|if_not) inventory_count <identifier> <comparator> {}
+    // @Format (while|while_not) <num>? inventory_count <identifier> <comparator> {}
     public static final Conditional INVENTORY_COUNT;
     // @Format (if|if_not) equipment_has <identifier> {}
     // @Format (while|while_not) <num>? equipment_has <identifier> {}
@@ -170,10 +239,10 @@ public class Conditionals implements Global {
     // @Format (while|while_not) <num>? dimension (overworld|the_nether|the_end) {}
     public static final Conditional DIMENSION;
     // @Format (if|if_not) effect_amplifier <identifier> <comparator> <int> {}
-    // @Format (while|while_not) <num>? <identifier> <comparator> <int> {}
+    // @Format (while|while_not) <num>? effect_amplifier<identifier> <comparator> <int> {}
     public static final Conditional EFFECT_AMPLIFIER;
     // @Format (if|if_not) effect_duration <identifier> <comparator> <int> {}
-    // @Format (while|while_not) <num>? <identifier> <comparator> <int> {}
+    // @Format (while|while_not) <num>? effect_duration<identifier> <comparator> <int> {}
     public static final Conditional EFFECT_DURATION;
     // @Format (if|if_not) in_game {}
     // @Format (while|while_not) <num>? in_game {}
