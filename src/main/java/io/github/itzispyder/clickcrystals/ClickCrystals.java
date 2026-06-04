@@ -36,6 +36,7 @@ import io.github.itzispyder.clickcrystals.events.listeners.UserInputListener;
 import io.github.itzispyder.clickcrystals.gui.hud.fixed.*;
 import io.github.itzispyder.clickcrystals.gui.hud.positionable.*;
 import io.github.itzispyder.clickcrystals.gui.screens.HudEditScreen;
+import io.github.itzispyder.clickcrystals.gui.screens.ModuleEditScreen;
 import io.github.itzispyder.clickcrystals.modules.Module;
 import io.github.itzispyder.clickcrystals.modules.keybinds.Keybind;
 import io.github.itzispyder.clickcrystals.modules.modules.ScriptedModule;
@@ -114,9 +115,8 @@ public final class ClickCrystals implements ModInitializer, Global {
             .onPress(bind -> {
                 if (Module.isEnabled(InGameHuds.class)) {
                     mc.setScreenAndShow(new HudEditScreen());
-                }
-                else {
-                    ChatUtils.sendPrefixMessage("§cThe module §7InGameHuds §cis not enabled! Press this keybind again when it is.");
+                } else {
+                    ChatUtils.sendClickableMessage("§c§nThe module §c§nInGameHuds §c§nis not enabled! Press this message to enable it.", () -> mc.setScreen(new ModuleEditScreen(Module.get(InGameHuds.class))));
                 }
             })
             .onChange(config::saveKeybind)

@@ -4,11 +4,17 @@ import io.github.itzispyder.clickcrystals.Global;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.SoundManager;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 
+import java.util.Optional;
+
 public final class ChatUtils implements Global {
+
+    private static Runnable pendingClickAction;
 
     public static void sendMessage(String message) {
         if (message != null && PlayerUtils.valid()) {
@@ -61,5 +67,25 @@ public final class ChatUtils implements Global {
         SoundEvent event = SoundEvents.EXPERIENCE_ORB_PICKUP;
         SoundInstance sound = SimpleSoundInstance.forUI(event, 10.0F, 0.1F);
         mc.execute(() -> sm.play(sound));
+    }
+
+    public static void sendClickableMessage(String message, Runnable onClick) {
+        pendingClickAction = onClick;
+
+        Component component = Component.literal(message).withStyle(style ->
+                style.withClickEvent(new ClickEvent.Custom(
+                        Identifier.fromNamespaceAndPath(modId, "click"),
+                        Optional.empty()
+                ))
+        );
+
+        PlayerUtils.player().sendSystemMessage(component);
+    }
+
+    public static void handleCustomClick() {
+        Runnable action = pendingClickAction;
+        pendingClickAction = null;
+
+        if (action != null) action.run();
     }
 }

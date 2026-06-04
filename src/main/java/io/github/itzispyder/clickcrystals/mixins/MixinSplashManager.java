@@ -29,7 +29,7 @@ public class MixinSplashManager implements Global {
 
     @Inject(method = "getSplash", at = @At("RETURN"), cancellable = true)
     private void onGet(CallbackInfoReturnable<SplashRenderer> cir) {
-        if (splashes.isEmpty() || Math.random() < 0.2)
+        if (splashes.isEmpty() || Math.random() > 0.2)
             return;
 
         List<String> custom = loadCustomSplashes();
