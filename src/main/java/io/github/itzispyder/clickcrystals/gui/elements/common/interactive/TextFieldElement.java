@@ -14,7 +14,7 @@ import net.minecraft.network.chat.FormattedText;
 import net.minecraft.util.FormattedCharSequence;
 import org.lwjgl.glfw.GLFW;
 
-import java.awt.Point;
+import java.awt.*;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -139,7 +139,7 @@ public class TextFieldElement extends GuiElement implements Typeable {
             return;
         }
 
-        // Auto-close: ( → (), [ → [], { → {}
+        // Auto-close: ( -> (), [ -> [], { -> {}
         if (closing != 0) {
             final char c = closing;
             onInput(input -> insertInput(chr + String.valueOf(c)));

@@ -52,7 +52,7 @@ public abstract class MixinScreen implements Global {
             return;
         }
 
-        // all other events → vanilla behavior
+        // all other events -> vanilla behavior
         original.call(event, minecraft, activeScreen);
     }
 }

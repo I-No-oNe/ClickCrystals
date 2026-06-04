@@ -6,6 +6,7 @@ import io.github.itzispyder.clickcrystals.gui.elements.browsingmode.CategoryElem
 import io.github.itzispyder.clickcrystals.gui.elements.common.AbstractElement;
 import io.github.itzispyder.clickcrystals.gui.misc.Shades;
 import io.github.itzispyder.clickcrystals.gui.misc.Tex;
+import io.github.itzispyder.clickcrystals.gui.screens.scripts.ClickScriptIDE;
 import io.github.itzispyder.clickcrystals.gui.screens.settings.SettingScreen;
 import io.github.itzispyder.clickcrystals.modules.Categories;
 import io.github.itzispyder.clickcrystals.modules.Category;
@@ -172,7 +173,7 @@ public abstract class DefaultBase extends AnimatedBase {
     }
 
     private void renderAnnouncementPing(GuiGraphicsExtractor context) {
-        if (this instanceof SearchScreen) // looks ugly with search
+        if (this instanceof SearchScreen || this instanceof ClickScriptIDE) // looks ugly with search
             return;
         if (unreadAnnouncementsCount <= 0)
             return;

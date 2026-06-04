@@ -1,6 +1,7 @@
 package io.github.itzispyder.clickcrystals.gui.screens.scripts;
 
 import io.github.itzispyder.clickcrystals.Global;
+import io.github.itzispyder.clickcrystals.client.networking.PacketMapper;
 import io.github.itzispyder.clickcrystals.scripting.ClickScript;
 import io.github.itzispyder.clickcrystals.scripting.components.Conditionals;
 import io.github.itzispyder.clickcrystals.scripting.syntax.InputType;
@@ -9,21 +10,16 @@ import io.github.itzispyder.clickcrystals.scripting.syntax.client.ConfigCmd;
 import io.github.itzispyder.clickcrystals.scripting.syntax.client.DefineCmd;
 import io.github.itzispyder.clickcrystals.scripting.syntax.client.ModuleCmd;
 import io.github.itzispyder.clickcrystals.scripting.syntax.logic.OnEventCmd;
-import io.github.itzispyder.clickcrystals.client.networking.PacketMapper;
 import io.github.itzispyder.clickcrystals.util.minecraft.render.RenderUtils;
 import io.github.itzispyder.clickcrystals.util.misc.Dimensions;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.core.Direction;
-import net.minecraft.world.level.GameType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.GameType;
 import org.lwjgl.glfw.GLFW;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class ClickScriptAutocomplete implements Global {
 
@@ -37,8 +33,26 @@ public class ClickScriptAutocomplete implements Global {
     private static final int COLOR_TEXT = 0xFFAAAAAA;
     private static final int COLOR_HIGHLIGHT = 0xFFFFFFFF;
 
-    private static final List<String> COMMANDS, EVENT_TYPES, CONDITIONALS, MODULE_ACTIONS, CONFIG_TYPES, DEFINE_TYPES, INPUT_TYPES, DIMENSIONS, AS_TYPES, INTERACT_TYPES, CAMERA_TYPES, GAMEMODE_TYPES, DIRECTION_TYPES, HAND_TYPES, PACKET_TYPES, PACKET_C2S, PACKET_S2C, CANCELABLE_INPUT_TYPES;
     private static final Set<String> COMMAND_SET;
+    private static final List<String>
+            COMMANDS,
+            EVENT_TYPES,
+            CONDITIONALS,
+            MODULE_ACTIONS,
+            CONFIG_TYPES,
+            DEFINE_TYPES,
+            INPUT_TYPES,
+            DIMENSIONS,
+            AS_TYPES,
+            INTERACT_TYPES,
+            CAMERA_TYPES,
+            GAMEMODE_TYPES,
+            DIRECTION_TYPES,
+            HAND_TYPES,
+            PACKET_TYPES,
+            PACKET_C2S,
+            PACKET_S2C,
+            CANCELABLE_INPUT_TYPES;
 
     static {
         COMMANDS = sorted(Arrays.asList(ClickScript.collectNames()));
@@ -92,7 +106,7 @@ public class ClickScriptAutocomplete implements Global {
         int tokenIdx = tokens.length - 1;
         String prefix = tokenIdx >= 0 ? tokens[tokenIdx] : "";
 
-        // Skip blank lines; allow empty prefix on subsequent tokens (e.g. "on " → show event types).
+        // Skip blank lines; allow empty prefix on subsequent tokens (e.g. "on " -> show event types).
         if (prefix.isEmpty() && tokenIdx == 0) return;
 
         // Never suggest when the user is already typing a number.
