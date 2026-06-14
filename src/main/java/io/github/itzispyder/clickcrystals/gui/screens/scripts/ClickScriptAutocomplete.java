@@ -10,10 +10,12 @@ import io.github.itzispyder.clickcrystals.scripting.syntax.client.ConfigCmd;
 import io.github.itzispyder.clickcrystals.scripting.syntax.client.DefineCmd;
 import io.github.itzispyder.clickcrystals.scripting.syntax.client.ModuleCmd;
 import io.github.itzispyder.clickcrystals.scripting.syntax.logic.OnEventCmd;
+import io.github.itzispyder.clickcrystals.modules.keybinds.Keybind;
 import io.github.itzispyder.clickcrystals.util.minecraft.render.RenderUtils;
 import io.github.itzispyder.clickcrystals.util.misc.Dimensions;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.GameType;
@@ -52,7 +54,11 @@ public class ClickScriptAutocomplete implements Global {
             PACKET_TYPES,
             PACKET_C2S,
             PACKET_S2C,
-            CANCELABLE_INPUT_TYPES;
+            CANCELABLE_INPUT_TYPES,
+            KEY_NAMES,
+            ITEM_IDS,
+            HAND_OR_ITEM_TYPES,
+            SWITCH_TYPES;
 
     static {
         COMMANDS = sorted(Arrays.asList(ClickScript.collectNames()));
@@ -76,6 +82,23 @@ public class ClickScriptAutocomplete implements Global {
         CANCELABLE_INPUT_TYPES = sorted(new ArrayList<>(INPUT_TYPES) {{
             add("cancel");
         }});
+        KEY_NAMES = sorted(keyNames());
+        ITEM_IDS = sorted(BuiltInRegistries.ITEM.keySet().stream().map(id -> ":" + id.getPath()).toList());
+        HAND_OR_ITEM_TYPES = sorted(new ArrayList<>(ITEM_IDS) {{
+            addAll(HAND_TYPES);
+        }});
+        SWITCH_TYPES = sorted(new ArrayList<>(ITEM_IDS) {{
+            add("back");
+        }});
+    }
+
+    // Key names accepted by "on key_press"/"on key_release": the named keys plus the
+    // single-character glfw key names (letters and digits) reported at runtime.
+    private static List<String> keyNames() {
+        List<String> names = new ArrayList<>(Keybind.EXTENDED_NAMES.values());
+        for (char c = 'a'; c <= 'z'; c++) names.add(String.valueOf(c));
+        for (char c = '0'; c <= '9'; c++) names.add(String.valueOf(c));
+        return names;
     }
 
     private final List<String> suggestions = new ArrayList<>();
@@ -93,6 +116,18 @@ public class ClickScriptAutocomplete implements Global {
 
     private static List<String> sorted(List<String> list) {
         return list.stream().sorted().toList();
+    }
+
+    // Matches a suggestion against the typed prefix. Identifier suggestions (":item") are also
+    // matched by their bare name, so the leading ":" is optional while typing.
+    private static boolean matches(String keyword, String prefix) {
+        if (keyword.equals(prefix)) return false;
+        if (keyword.startsWith(prefix)) return true;
+        return isSigil(keyword.charAt(0)) && !isSigil(prefix.charAt(0)) && keyword.regionMatches(1, prefix, 0, prefix.length());
+    }
+
+    private static boolean isSigil(char c) {
+        return c == ':' || c == '#';
     }
 
     public void update(String line, int cursorCol) {
@@ -114,7 +149,7 @@ public class ClickScriptAutocomplete implements Global {
 
         List<String> pool = resolvePool(tokens, tokenIdx);
         for (String kw : pool) {
-            if (kw.startsWith(prefix) && !kw.equals(prefix)) {
+            if (matches(kw, prefix)) {
                 suggestions.add(kw);
                 if (suggestions.size() >= MAX_SUGGESTIONS) break;
             }
@@ -151,6 +186,9 @@ public class ClickScriptAutocomplete implements Global {
             default -> false;
         };
         if (variable) {
+            // key events take a key name before the inline command
+            if ((event.equals("key_press") || event.equals("key_release")) && tokenIdx == 2)
+                return KEY_NAMES;
             for (int i = 2; i < tokenIdx; i++) {
                 if (COMMAND_SET.contains(tokens[i].toLowerCase()))
                     return firstArgPool(tokens[i].toLowerCase(), tokenIdx - i);
@@ -224,8 +262,11 @@ public class ClickScriptAutocomplete implements Global {
             case "facing", "target_block_face" -> argIdx == 0 ? DIRECTION_TYPES : List.of();
             case "reference_entity" -> argIdx == 0 ? AS_TYPES : List.of();
             case "dimension" -> argIdx == 0 ? DIMENSIONS : List.of();
-            case "item_count", "item_durability", "item_cooldown", "inventory_count", "hotbar_count" ->
-                    argIdx == 0 ? HAND_TYPES : List.of();
+            case "item_count", "item_durability", "item_cooldown" ->
+                    argIdx == 0 ? HAND_OR_ITEM_TYPES : List.of();
+            case "holding", "off_holding", "inventory_has", "inventory_count",
+                 "equipment_has", "hotbar_has", "hotbar_count", "cursor_item" ->
+                    argIdx == 0 ? ITEM_IDS : List.of();
             default -> List.of();
         };
     }
@@ -242,7 +283,8 @@ public class ClickScriptAutocomplete implements Global {
             case "hold_input", "toggle_input" -> CANCELABLE_INPUT_TYPES;
             case "interact", "damage" -> INTERACT_TYPES;
             case "cancel_packet", "uncancel_packet" -> PACKET_TYPES;
-            case "switch" -> List.of("back");
+            case "switch" -> SWITCH_TYPES;
+            case "gui_quickmove", "gui_swap", "gui_switch", "gui_drop", "craft" -> ITEM_IDS;
             case "drop" -> List.of("all");
             case "dimension" -> DIMENSIONS;
             case "as" -> AS_TYPES;

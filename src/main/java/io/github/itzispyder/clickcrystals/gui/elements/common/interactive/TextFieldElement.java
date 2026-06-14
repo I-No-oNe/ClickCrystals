@@ -97,6 +97,51 @@ public class TextFieldElement extends GuiElement implements Typeable {
         return Math.max(selectionStart, selectionEnd);
     }
 
+    // Comments or uncomments every line touched by the cursor or selection (Ctrl+A then Ctrl+/ covers all lines).
+    private boolean toggleComment() {
+        int from = selectedAll ? 0 : selMin();
+        int to = selectedAll ? content.length() : selMax();
+        int blockStart = lineStart(from);
+        int blockEnd = lineEnd(to);
+        boolean collapsed = !selectedAll && !hasRange();
+
+        String block = content.substring(blockStart, blockEnd);
+        String[] lines = block.split("\n", -1);
+
+        // Uncomment only when every non-blank line is already commented; otherwise comment them all.
+        boolean allCommented = true;
+        for (String line : lines)
+            if (!line.isBlank() && !line.startsWith("//")) {
+                allCommented = false;
+                break;
+            }
+
+        StringBuilder rebuilt = new StringBuilder();
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+            if (!line.isBlank())
+                line = allCommented ? line.substring(line.startsWith("// ") ? 3 : 2) : "// " + line;
+            rebuilt.append(line);
+            if (i < lines.length - 1) rebuilt.append("\n");
+        }
+
+        pushUndo();
+        int savedStart = selectionStart;
+        content = content.substring(0, blockStart) + rebuilt + content.substring(blockEnd);
+
+        if (collapsed) {
+            int delta = rebuilt.length() - block.length();
+            selectionStart = selectionEnd = MathUtils.clamp(savedStart + delta, blockStart, blockStart + rebuilt.length());
+        } else {
+            selectionStart = blockStart;
+            selectionEnd = blockStart + rebuilt.length();
+        }
+        styledContent = style(content);
+        updateSelection();
+        preferredCol = -1;
+        return true;
+    }
+
     private void deleteRange() {
         pushUndo();
         int lo = selectedAll ? 0              : selMin();
@@ -270,28 +315,7 @@ public class TextFieldElement extends GuiElement implements Typeable {
                     return true;
                 }
                 case GLFW.GLFW_KEY_SLASH -> {
-                    int ls = lineStart(selectionStart);
-                    int le = lineEnd(selectionStart);
-                    String line = content.substring(ls, le);
-                    pushUndo();
-                    String newLine;
-                    int delta;
-                    if (line.startsWith("// ")) {
-                        newLine = line.substring(3);
-                        delta = -3;
-                    } else if (line.startsWith("//")) {
-                        newLine = line.substring(2);
-                        delta = -2;
-                    } else {
-                        newLine = "// " + line;
-                        delta = 3;
-                    }
-                    content = content.substring(0, ls) + newLine + content.substring(le);
-                    selectionStart = selectionEnd = MathUtils.clamp(selectionStart + delta, ls, ls + newLine.length());
-                    styledContent = style(content);
-                    updateSelection();
-                    preferredCol = -1;
-                    return true;
+                    return toggleComment();
                 }
                 case GLFW.GLFW_KEY_LEFT -> {
                     selectionStart = selectionEnd = prevWordBoundary(selectionStart);
@@ -772,6 +796,8 @@ public class TextFieldElement extends GuiElement implements Typeable {
     public static class TextHighlighter {
         private List<HighlightFactory> stringFactories = new ArrayList<>();
         private ChatColor originalColor;
+        private String commentPrefix;
+        private ChatColor commentColor = ChatColor.GRAY;
 
         public TextHighlighter(ChatColor originalColor) {
             this.originalColor = originalColor;
@@ -781,10 +807,22 @@ public class TextFieldElement extends GuiElement implements Typeable {
             this(ChatColor.WHITE);
         }
 
+        // Renders whole lines starting with the given prefix in a single comment color.
+        public TextHighlighter comments(String prefix, ChatColor color) {
+            this.commentPrefix = prefix;
+            this.commentColor = color;
+            return this;
+        }
+
         public String highlightText(String text) {
             String[] lines = text.lines().toArray(String[]::new);
             StringBuilder result = new StringBuilder();
             for (int i = 0; i < lines.length; i++) {
+                if (commentPrefix != null && lines[i].stripLeading().startsWith(commentPrefix)) {
+                    result.append("%s%s%s".formatted(commentColor, lines[i], originalColor));
+                    if (i < lines.length - 1) result.append("\n");
+                    continue;
+                }
                 String[] words = lines[i].split(" ");
                 for (int j = 0; j < words.length; j++) {
                     String word = words[j];
