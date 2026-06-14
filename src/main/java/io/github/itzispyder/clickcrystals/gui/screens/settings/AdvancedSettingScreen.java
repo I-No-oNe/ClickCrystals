@@ -62,6 +62,17 @@ public class AdvancedSettingScreen extends DefaultBase {
             })
             .build()
     );
+    public final ModuleSetting<Boolean> disableScriptChatErrors = scGui.add(scGui.createBoolSetting()
+            .name("disable-script-chat-errors")
+            .description("Don't print ClickScript errors to chat - show them only in the ClickCrystals logs")
+            .def(ClickCrystals.config.isDisableScriptChatErrors())
+            .visibleWhen(() -> !ClickCrystals.config.isDisableModuleToggleBroadcast())
+            .onSettingChange(setting -> {
+                ClickCrystals.config.setDisableScriptChatErrors(setting.getVal());
+                ClickCrystals.config.save();
+            })
+            .build()
+    );
     public final ModuleSetting<Boolean> debugMode = scGui.add(scGui.createBoolSetting()
             .name("debug-mode")
             .description("Useful while developing, for devs only ;)")
@@ -76,7 +87,7 @@ public class AdvancedSettingScreen extends DefaultBase {
     public AdvancedSettingScreen() {
         super("Advanced Settings Screen");
 
-        ScrollPanelElement panel = new ScrollPanelElement(this, contentX + 5, contentY + 21, contentWidth - 5, contentHeight - 21);
+        ScrollPanelElement panel = new ScrollPanelElement(this, contentX + 5, contentY + 21, contentWidth - 5, contentHeight - 21).verticalStack(5);
         int caret = contentY + 25;
         int margin = contentX + 5;
 

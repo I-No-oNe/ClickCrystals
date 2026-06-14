@@ -4,20 +4,80 @@ import io.github.itzispyder.clickcrystals.gui.GuiElement;
 import io.github.itzispyder.clickcrystals.gui.elements.common.AbstractElement;
 import io.github.itzispyder.clickcrystals.gui.misc.Shades;
 import io.github.itzispyder.clickcrystals.gui.misc.Tex;
+import io.github.itzispyder.clickcrystals.gui.misc.animators.Animations;
+import io.github.itzispyder.clickcrystals.gui.misc.animators.Animator;
 import io.github.itzispyder.clickcrystals.modules.ModuleSetting;
+import io.github.itzispyder.clickcrystals.util.MathUtils;
 import io.github.itzispyder.clickcrystals.util.minecraft.TextUtils;
 import io.github.itzispyder.clickcrystals.util.minecraft.render.RenderUtils;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 public abstract class SettingElement<T extends ModuleSetting<?>> extends GuiElement {
 
+    private static final long VISIBILITY_ANIM_MS = 250;
+
     protected final T setting;
     protected boolean shouldUnderline;
+    private final int slotHeight;
+    private Animator visibilityAnimator;
+    private boolean lastVisible;
 
     public SettingElement(T setting, int x, int y) {
         super(x, y, 270, 40);
         this.shouldUnderline = false;
         this.setting = setting;
+        this.slotHeight = height;
+        this.lastVisible = setting.isVisible();
+    }
+
+    // 0 = fully hidden, 1 = fully shown; animates when the setting's visibility condition flips.
+    private double visibility() {
+        boolean visible = setting.isVisible();
+        if (visible != lastVisible) {
+            lastVisible = visible;
+            visibilityAnimator = new Animator(VISIBILITY_ANIM_MS, Animations.FADE_IN_AND_OUT);
+            visibilityAnimator.setReversed(!visible);
+            visibilityAnimator.reset();
+        }
+        if (visibilityAnimator == null)
+            return visible ? 1 : 0;
+        if (visibilityAnimator.isFinished()) {
+            visibilityAnimator = null;
+            return visible ? 1 : 0;
+        }
+        return MathUtils.clamp(visibilityAnimator.getAnimation(), 0.0, 1.0);
+    }
+
+    @Override
+    public int getLayoutHeight() {
+        return (int) (slotHeight * visibility());
+    }
+
+    @Override
+    public void render(GuiGraphicsExtractor context, int mouseX, int mouseY) {
+        double factor = visibility();
+        if (factor <= 0.01) {
+            setRendering(false);
+            return;
+        }
+        setRendering(true);
+
+        if (factor >= 0.99) {
+            super.render(context, mouseX, mouseY);
+            return;
+        }
+
+        // collapsing/expanding: clip to the animated slot height (matches the reserved layout height)
+        int clip = Math.max(1, (int) (slotHeight * factor));
+        context.enableScissor(x, y, x + width, y + clip);
+        super.render(context, mouseX, mouseY);
+        context.disableScissor();
+    }
+
+    @Override
+    public void mouseClicked(double mouseX, double mouseY, int button) {
+        if (setting.isVisible())
+            super.mouseClicked(mouseX, mouseY, button);
     }
 
     public void renderSettingDetails(GuiGraphicsExtractor context) {
@@ -66,6 +126,6 @@ public abstract class SettingElement<T extends ModuleSetting<?>> extends GuiElem
         int bxw = x + width - 5;
         int by = y + height / 2 - 4;
         int byh = y + height / 2 + 12;
-        return rendering && mouseX > bx && mouseX < bxw && mouseY > by && mouseY < byh;
+        return rendering && setting.isVisible() && mouseX > bx && mouseX < bxw && mouseY > by && mouseY < byh;
     }
 }

@@ -12,8 +12,7 @@ import io.github.itzispyder.clickcrystals.modules.Module;
 import io.github.itzispyder.clickcrystals.modules.ModuleSetting;
 import io.github.itzispyder.clickcrystals.modules.modules.ListenerModule;
 import io.github.itzispyder.clickcrystals.modules.modules.rendering.totemchams.ChamRagDoll;
-import io.github.itzispyder.clickcrystals.modules.modules.rendering.totemchams.ExplodingChamRagDoll;
-import io.github.itzispyder.clickcrystals.modules.modules.rendering.totemchams.FadingChamRagDoll;
+import io.github.itzispyder.clickcrystals.modules.modules.rendering.totemchams.*;
 import io.github.itzispyder.clickcrystals.modules.settings.SettingSection;
 import io.github.itzispyder.clickcrystals.util.minecraft.PlayerUtils;
 import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
@@ -26,16 +25,11 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class TotemChams extends ListenerModule {
 
-    boolean remove = false;
-
     private final SettingSection scGeneral = getGeneralSection();
     public final ModuleSetting<RagDoll> ragDollState = scGeneral.add(createEnumSetting(RagDoll.class)
             .name("rag-doll-type")
             .description("How the rag doll should look like")
             .def(RagDoll.EXPLODING)
-            .onSettingChange(setting -> {
-                remove = setting.getVal() == RagDoll.FADING;
-            })
             .build());
     public final ModuleSetting<Boolean> showSelf = scGeneral.add(createBoolSetting()
             .name("show-self")
@@ -46,6 +40,7 @@ public class TotemChams extends ListenerModule {
     public final ModuleSetting<Double> maxVelocity = scGeneral.add(createDoubleSetting()
             .name("max-velocity")
             .description("Max velocity of the flying parts")
+            .visibleWhen(()-> ragDollState.getVal().usesMaxVel())
             .max(1.0)
             .min(0.0)
             .def(0.1)
@@ -54,6 +49,7 @@ public class TotemChams extends ListenerModule {
     public final ModuleSetting<Double> gravity = scGeneral.add(createDoubleSetting()
             .name("gravity")
             .description("Gravity of the visuals")
+            .visibleWhen(() -> ragDollState.getVal().usesGravity())
             .max(0.05)
             .min(0.0)
             .def(0.01)
@@ -117,21 +113,6 @@ public class TotemChams extends ListenerModule {
 
     @EventHandler
     private void onTick(ClientTickEndEvent e) {
-        if (remove) {
-            scGeneral.remove(maxVelocity);
-        }
-        else {
-            boolean exists = false;
-            for (int i = 0; i < scGeneral.getSettings().size(); i++) {
-                if (scGeneral.getSettings().get(i) == maxVelocity) {
-                    exists = true;
-                    break;
-                }
-            }
-            if (!exists)
-                scGeneral.getSettings().add(2, maxVelocity);
-        }
-
         if (PlayerUtils.invalid())
             return;
 
@@ -160,13 +141,26 @@ public class TotemChams extends ListenerModule {
     }
 
     public enum RagDoll {
-        EXPLODING(ExplodingChamRagDoll.class),
-        FADING(FadingChamRagDoll.class);
+        EXPLODING(ExplodingChamRagDoll.class, true, true),
+        FADING(FadingChamRagDoll.class, true, false),
+        RISING(RisingChamRagDoll.class, false, false),
+        VORTEX(VortexChamRagDoll.class, false, false);
 
         private final Class<? extends ChamRagDoll<?>> clazz;
+        private final boolean usesGravity, usesMaxVel;
 
-        RagDoll(Class<? extends ChamRagDoll<?>> clazz) {
+        RagDoll(Class<? extends ChamRagDoll<?>> clazz, boolean usesGravity, boolean usesMaxVel) {
             this.clazz = clazz;
+            this.usesGravity = usesGravity;
+            this.usesMaxVel = usesMaxVel;
+        }
+
+        public boolean usesGravity() {
+            return usesGravity;
+        }
+
+        public boolean usesMaxVel() {
+            return usesMaxVel;
         }
 
         public ChamRagDoll<?> get(Player player) {

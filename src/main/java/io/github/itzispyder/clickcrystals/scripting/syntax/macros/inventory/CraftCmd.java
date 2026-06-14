@@ -77,14 +77,10 @@ public class CraftCmd extends ScriptCommand implements Global {
 
     // One fill-then-take cycle; reschedules itself until done, materials run out, or the inventory fills up.
     private void craftCycle(AbstractCraftingMenu menu, RecipeDisplayId recipe, boolean all, int cyclesLeft, long delay) {
-        system.scheduler.runDelayedTask(() -> {
-            if (aborted(menu))
-                return;
+        step(menu, delay, () -> {
             mc.gameMode.handlePlaceRecipe(menu.containerId, recipe, all);
 
-            system.scheduler.runDelayedTask(() -> {
-                if (aborted(menu))
-                    return;
+            step(menu, delay, () -> {
                 Slot result = menu.getResultSlot();
                 if (!result.hasItem() || noRoomFor(result.getItem())) {
                     crafting = false;
@@ -95,21 +91,25 @@ public class CraftCmd extends ScriptCommand implements Global {
                 int left = all ? cyclesLeft : cyclesLeft - 1;
                 if (left > 0) craftCycle(menu, recipe, all, left, delay);
                 else crafting = false;
-            }, stepDelay(delay));
-        }, stepDelay(delay));
+            });
+        });
     }
 
-    // Stops the craft loop if the player left the menu or became invalid.
-    private boolean aborted(AbstractCraftingMenu menu) {
-        if (PlayerUtils.invalid() || mc.player.containerMenu != menu) {
-            crafting = false;
-            return true;
-        }
-        return false;
-    }
-
-    private static long stepDelay(long base) {
-        return base + MIN_DELAY + (long) (Math.random() * RAND_DELAY);
+    // Runs a craft step on the main thread after a human-like delay. Aborts if the menu closed and
+    // always clears the busy flag on failure, so a dropped/throwing step can never wedge the command.
+    private void step(AbstractCraftingMenu menu, long delay, Runnable body) {
+        system.scheduler.runDelayedTask(() -> mc.execute(() -> {
+            try {
+                if (PlayerUtils.invalid() || mc.player.containerMenu != menu) {
+                    crafting = false;
+                    return;
+                }
+                body.run();
+            }
+            catch (Exception e) {
+                crafting = false;
+            }
+        }), delay + MIN_DELAY + (long) (Math.random() * RAND_DELAY));
     }
 
     // Scans the recipe book for a craftable crafting recipe whose result matches, tracking why a match may be unusable.

@@ -15,6 +15,8 @@ public class ScrollPanelElement extends GuiElement {
     public static final int SCROLL_MULTIPLIER = 15;
     private int remainingUp, remainingDown, limitTop, limitBottom, scrollbarY, scrollbarHeight, prevDrag;
     private boolean scrolling;
+    private boolean verticalStack;
+    private int stackGap;
 
     private final Animator interpolation;
     private int interpolationLength;
@@ -95,6 +97,29 @@ public class ScrollPanelElement extends GuiElement {
         }
     }
 
+    // Stack children vertically by their layout height, so collapsed/animating elements close the gap.
+    public ScrollPanelElement verticalStack(int gap) {
+        this.verticalStack = true;
+        this.stackGap = gap;
+        return this;
+    }
+
+    // Anchors on the first child (which already tracks the scroll offset) and re-flows the rest below it.
+    private void restack() {
+        if (!verticalStack || getChildren().isEmpty())
+            return;
+
+        GuiElement first = getChildren().get(0);
+        int caret = first.y + first.getLayoutHeight() + stackGap;
+        for (int i = 1; i < getChildren().size(); i++) {
+            GuiElement child = getChildren().get(i);
+            if (child.y != caret)
+                child.move(0, caret - child.y);
+            caret += child.getLayoutHeight() + stackGap;
+        }
+        recalculatePositions();
+    }
+
     @Override
     public void onRender(GuiGraphicsExtractor context, int mouseX, int mouseY) {
 
@@ -102,6 +127,7 @@ public class ScrollPanelElement extends GuiElement {
 
     @Override
     public void render(GuiGraphicsExtractor context, int mouseX, int mouseY) {
+        restack();
         boolean bl = canRender();
 
         float interpolatedDelta = (float)(interpolationLength * interpolation.getProgressClampedReversed());

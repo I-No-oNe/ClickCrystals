@@ -21,7 +21,7 @@ public class ModuleEditElement extends GuiElement {
         this.setDraggable(true);
         this.module = module;
 
-        ScrollPanelElement panel = new ScrollPanelElement(parentScreen, x + 5, y + 21, width - 5, height - 21);
+        ScrollPanelElement panel = new ScrollPanelElement(parentScreen, x + 5, y + 21, width - 5, height - 21).verticalStack(5);
         int caret = y + 25;
 
         for (SettingSection section : module.getData().getSettingSections()) {

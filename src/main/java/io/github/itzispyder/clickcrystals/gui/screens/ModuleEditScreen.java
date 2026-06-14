@@ -26,7 +26,7 @@ public class ModuleEditScreen extends DefaultBase {
         this.module = module;
         previousOpened = module;
 
-        ScrollPanelElement panel = new ScrollPanelElement(this, contentX + 5, contentY + 21, contentWidth - 5, contentHeight - 21);
+        ScrollPanelElement panel = new ScrollPanelElement(this, contentX + 5, contentY + 21, contentWidth - 5, contentHeight - 21).verticalStack(5);
         int caret = contentY + 25;
 
         for (SettingSection section : module.getData().getSettingSections()) {

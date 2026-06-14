@@ -40,12 +40,14 @@ public class GuiCursor extends Module implements Listener {
     public final ModuleSetting<Boolean> totemShiftHolder = scGeneral.add(createBoolSetting()
             .name("totem-shift-holder")
             .description("Holds down shift if the item you clicked on is a totem.")
+            .visibleWhen(()-> cursorAction.getVal() == Mode.HOVER_TOTEM)
             .def(false)
             .build()
     );
     public final ModuleSetting<Boolean> closestTotemSlot = scGeneral.add(createBoolSetting()
             .name("closest-totem-slot")
-            .description("Picks the totem slot closest to the center of the inventory instead of the first one found. Requires cursor-action to be HOVER_TOTEM.")
+            .description("Picks the totem slot closest to the center of the inventory instead of the first one found.")
+            .visibleWhen(()-> cursorAction.getVal() == Mode.HOVER_TOTEM)
             .def(true)
             .build()
     );
