@@ -18,13 +18,14 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.display.RecipeDisplay;
 import net.minecraft.world.item.crafting.display.RecipeDisplayEntry;
+import net.minecraft.world.item.crafting.display.RecipeDisplayId;
 import net.minecraft.world.item.crafting.display.ShapedCraftingRecipeDisplay;
 import net.minecraft.world.item.crafting.display.ShapelessCraftingRecipeDisplay;
 import net.minecraft.world.item.crafting.display.SlotDisplayContext;
 
 import java.util.function.Predicate;
 
-// @Format craft <identifier> <num>?
+// @Format craft <identifier> <num>? <num>?
 public class CraftCmd extends ScriptCommand implements Global {
 
     private static final int MIN_DELAY = 60, RAND_DELAY = 90;
@@ -46,6 +47,10 @@ public class CraftCmd extends ScriptCommand implements Global {
         String id = args.get(0).toString();
         Predicate<ItemStack> target = ScriptParser.parseItemPredicate(id);
         long delay = (long) (args.getSize() > 1 ? args.get(1).toDouble() * 1000L : 0L);
+        boolean all = args.getSize() <= 2; // amount omitted -> craft everything
+        int amount = all ? 0 : args.get(2).toInt();
+        if (!all && amount <= 0)
+            return;
 
         int side = (int) Math.sqrt(menu.getInputGridSlots().size());
         ContextMap ctx = SlotDisplayContext.fromLevel(mc.level);
@@ -59,24 +64,52 @@ public class CraftCmd extends ScriptCommand implements Global {
             throw new IllegalArgumentException("Not enough materials in your inventory to craft \"" + id + "\".");
         }
 
-        if (noRoomFor(found.entry.resultItems(ctx).get(0)))
+        ItemStack result = found.entry.resultItems(ctx).get(0);
+        if (noRoomFor(result))
             throw new IllegalArgumentException("Your inventory is full - no room for the crafted \"" + id + "\".");
 
+        // "all": repeatedly max-fill and bulk-craft until materials run out.
+        // amount: craft one recipe set per cycle, enough cycles to yield the requested amount.
         crafting = true;
-        // fill the grid with full stacks (recipe-book auto-fill), then bulk-craft the whole batch
-        mc.gameMode.handlePlaceRecipe(menu.containerId, found.entry.id(), true);
-        takeResult(menu, delay);
+        int cycles = all ? Integer.MAX_VALUE : (amount + result.getCount() - 1) / result.getCount();
+        craftCycle(menu, found.entry.id(), all, cycles, delay);
     }
 
-    // Shift-clicks the result after the requested wait plus a small reaction delay, crafting the entire batch at once.
-    private void takeResult(AbstractCraftingMenu menu, long baseDelay) {
-        long delay = baseDelay + MIN_DELAY + (long) (Math.random() * RAND_DELAY);
+    // One fill-then-take cycle; reschedules itself until done, materials run out, or the inventory fills up.
+    private void craftCycle(AbstractCraftingMenu menu, RecipeDisplayId recipe, boolean all, int cyclesLeft, long delay) {
         system.scheduler.runDelayedTask(() -> {
-            Slot result = menu.getResultSlot();
-            if (!PlayerUtils.invalid() && mc.player.containerMenu == menu && result.hasItem())
+            if (aborted(menu))
+                return;
+            mc.gameMode.handlePlaceRecipe(menu.containerId, recipe, all);
+
+            system.scheduler.runDelayedTask(() -> {
+                if (aborted(menu))
+                    return;
+                Slot result = menu.getResultSlot();
+                if (!result.hasItem() || noRoomFor(result.getItem())) {
+                    crafting = false;
+                    return;
+                }
                 mc.gameMode.handleContainerInput(menu.containerId, result.index, 0, ContainerInput.QUICK_MOVE, mc.player);
+
+                int left = all ? cyclesLeft : cyclesLeft - 1;
+                if (left > 0) craftCycle(menu, recipe, all, left, delay);
+                else crafting = false;
+            }, stepDelay(delay));
+        }, stepDelay(delay));
+    }
+
+    // Stops the craft loop if the player left the menu or became invalid.
+    private boolean aborted(AbstractCraftingMenu menu) {
+        if (PlayerUtils.invalid() || mc.player.containerMenu != menu) {
             crafting = false;
-        }, delay);
+            return true;
+        }
+        return false;
+    }
+
+    private static long stepDelay(long base) {
+        return base + MIN_DELAY + (long) (Math.random() * RAND_DELAY);
     }
 
     // Scans the recipe book for a craftable crafting recipe whose result matches, tracking why a match may be unusable.
