@@ -1,0 +1,17 @@
+define module render_2d_hud
+define desc "Tests 2D render commands: fill_rect, draw_rect, fill_circle, draw_text"
+
+// panel top-left with border, a circle, and scaled text
+on render_2d {
+    fill_rect 10 10 120 60 #A0202020
+    draw_rect 10 10 120 60 aqua
+    fill_circle 40 40 12 red
+    draw_text "ClickCrystals" 60 30 white 1.0 true
+    draw_text "render_2d ok" 60 45 lime 0.8 true
+}
+
+// anchored to the right edge using expressions (no spaces inside an arg)
+on render_2d {
+    fill_rect screen_width-60 10 50 20 #80FF8000
+    draw_text "edge" screen_width-52 16 black 0.9 false
+}

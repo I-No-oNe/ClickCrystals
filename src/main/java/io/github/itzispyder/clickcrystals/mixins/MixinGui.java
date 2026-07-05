@@ -1,6 +1,8 @@
 package io.github.itzispyder.clickcrystals.mixins;
 
 import io.github.itzispyder.clickcrystals.Global;
+import io.github.itzispyder.clickcrystals.events.events.client.KeyPressEvent;
+import io.github.itzispyder.clickcrystals.events.events.client.Render2dEvent;
 import io.github.itzispyder.clickcrystals.gui.hud.Hud;
 import io.github.itzispyder.clickcrystals.modules.Module;
 import io.github.itzispyder.clickcrystals.modules.modules.rendering.HealthAsBar;
@@ -74,5 +76,7 @@ public abstract class MixinGui implements Global {
 
         for (Hud hud : system.huds().values())
             if (hud.canRender()) hud.render(context, tickCounter.getGameTimeDeltaPartialTick(true));
+
+        system.eventBus.pass(new Render2dEvent(context, tickCounter));
     }
 }

@@ -1,0 +1,13 @@
+define module render_3d_box
+define desc "Tests 3D render commands: draw_box, fill_box, draw_line_3d"
+
+// outline + translucent fill of the block the player stands on (relative coords)
+on render_3d {
+    draw_box ~-0.5 ~-1 ~-0.5 ~0.5 ~0 ~0.5 aqua
+    fill_box ~-0.5 ~-1 ~-0.5 ~0.5 ~0 ~0.5 #4000D0FF
+}
+
+// vertical beam from feet upward
+on render_3d {
+    draw_line_3d ~0 ~0 ~0 ~0 ~5 ~0 red
+}

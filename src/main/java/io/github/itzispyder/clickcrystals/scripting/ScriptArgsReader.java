@@ -187,6 +187,10 @@ public class ScriptArgsReader {
         return argDiff;
     }
 
+    public int getIndex() {
+        return index;
+    }
+
     public boolean currMatches(String s) {
         if (index < 0 || index >= args.getSize())
             return false;

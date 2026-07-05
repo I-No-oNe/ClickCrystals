@@ -52,6 +52,8 @@ public class OnEventCmd extends ScriptCommand implements ThenChainable {
             case DEATH -> ModuleCmd.runOnCurrentScriptModule(m -> m.deathListeners.add(() -> read.executeThenChain(false)));
             case GAME_JOIN -> ModuleCmd.runOnCurrentScriptModule(m -> m.gameJoinListeners.add(() -> read.executeThenChain(false)));
             case GAME_LEAVE -> ModuleCmd.runOnCurrentScriptModule(m -> m.gameLeaveListeners.add(() -> read.executeThenChain(false)));
+            case RENDER_2D -> ModuleCmd.runOnCurrentScriptModule(m -> m.render2dListeners.add(() -> read.executeThenChain(false)));
+            case RENDER_3D -> ModuleCmd.runOnCurrentScriptModule(m -> m.render3dListeners.add(() -> read.executeThenChain(false)));
         }
     }
 
@@ -238,6 +240,8 @@ public class OnEventCmd extends ScriptCommand implements ThenChainable {
         SOUND_PLAY, // @Format on sound_play <identifier> {}
         MOUSE_WHEEL_UP, // @Format on mouse_wheel_up {}
         MOUSE_WHEEL_DOWN, // @Format on mouse_wheel_down {}
-        MOUSE_WHEEL // @Format on mouse_wheel {}
+        MOUSE_WHEEL, // @Format on mouse_wheel {}
+        RENDER_2D, // @Format on render_2d {}
+        RENDER_3D // @Format on render_3d {}
     }
 }

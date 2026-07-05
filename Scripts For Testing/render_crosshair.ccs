@@ -1,0 +1,9 @@
+define module render_crosshair
+define desc "Centered 2D crosshair via width/height expressions"
+
+on render_2d {
+    fill_rect width/2-8 height/2 16 2 white
+    fill_rect width/2 height/2-8 2 16 white
+    fill_circle width/2 height/2 3 #C0FF00FF
+    draw_text "center" width/2-12 height/2+10 yellow 0.7 true
+}

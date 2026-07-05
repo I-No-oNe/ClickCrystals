@@ -13,6 +13,8 @@ import org.joml.Matrix4f;
 
 public class RenderWorldEvent extends Event {
 
+    public static RenderWorldEvent currentEvent;
+
     private final PoseStack matrices;
     private final Matrix4f rotationMatrix, projectionMatrix;
     private final GameRenderer renderer;

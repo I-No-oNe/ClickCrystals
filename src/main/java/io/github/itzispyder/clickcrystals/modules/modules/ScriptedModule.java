@@ -54,6 +54,8 @@ public class ScriptedModule extends ListenerModule {
     public final List<Runnable> mouseWheelUpListeners = new ArrayList<>();
     public final List<Runnable> mouseWheelDownListeners = new ArrayList<>();
     public final List<Runnable> mouseWheelListeners = new ArrayList<>();
+    public final List<Runnable> render2dListeners = new ArrayList<>();
+    public final List<Runnable> render3dListeners = new ArrayList<>();
 
 
     public final String filepath, filename, parentFolder;
@@ -118,6 +120,8 @@ public class ScriptedModule extends ListenerModule {
         mouseWheelListeners.clear();
         mouseWheelUpListeners.clear();
         mouseWheelDownListeners.clear();
+        render2dListeners.clear();
+        render3dListeners.clear();
     }
 
     @EventHandler
@@ -314,6 +318,26 @@ public class ScriptedModule extends ListenerModule {
     @EventHandler
     public void onGameLeave(GameLeaveEvent e) {
         gameLeaveListeners.forEach(Runnable::run);
+    }
+
+    @EventHandler
+    public void onRender2d(Render2dEvent e) {
+        Render2dEvent.currentEvent = e;
+        try {
+            render2dListeners.forEach(Runnable::run);
+        } finally {
+            Render2dEvent.currentEvent = null;
+        }
+    }
+
+    @EventHandler
+    public void onRenderWorld(RenderWorldEvent e) {
+        RenderWorldEvent.currentEvent = e;
+        try {
+            render3dListeners.forEach(Runnable::run);
+        } finally {
+            RenderWorldEvent.currentEvent = null;
+        }
     }
 
 

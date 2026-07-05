@@ -1,0 +1,36 @@
+define module render_info_hud
+define desc "Live player stats HUD: health/armor/food bars + readouts"
+
+// background panel + border
+on render_2d {
+    fill_rect 8 8 150 76 #B0101010
+    draw_rect 8 8 150 76 #FF303030
+    draw_text "Player Info" 16 14 aqua 0.9 true
+}
+
+// health bar (track + fill scaled by health, live text)
+on render_2d {
+    fill_rect 16 28 100 6 #40000000
+    fill_rect 16 28 health/max_health*100 6 red
+    draw_text "HP ${health}/${max_health}" 120 27 white 0.7 true
+}
+
+// armor bar (max 20)
+on render_2d {
+    fill_rect 16 38 100 6 #40000000
+    fill_rect 16 38 armor/20*100 6 aqua
+    draw_text "AR ${armor}" 120 37 white 0.7 true
+}
+
+// food bar (max 20)
+on render_2d {
+    fill_rect 16 48 100 6 #40000000
+    fill_rect 16 48 food/20*100 6 orange
+    draw_text "FD ${food}" 120 47 white 0.7 true
+}
+
+// coords + facing + held item count
+on render_2d {
+    draw_text "XYZ ${player_x} ${player_y} ${player_z}" 16 62 lime 0.7 true
+    draw_text "Yaw ${yaw} Pitch ${pitch} Held x${held_count}" 16 72 yellow 0.7 true
+}
