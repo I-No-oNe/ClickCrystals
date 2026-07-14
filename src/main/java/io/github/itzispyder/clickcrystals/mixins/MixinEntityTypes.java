@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(EntityTypes.class)
-public abstract class MixinEntityType {
+public abstract class MixinEntityTypes {
 
     @Inject(method = "register(Lnet/minecraft/resources/ResourceKey;Lnet/minecraft/world/entity/EntityType$Builder;)Lnet/minecraft/world/entity/EntityType;", at = @At("RETURN"))
     private static <T extends Entity> void register(ResourceKey<EntityType<?>> key, EntityType.Builder<T> builder, CallbackInfoReturnable<EntityType<T>> cir) {
