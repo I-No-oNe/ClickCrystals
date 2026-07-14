@@ -33,8 +33,20 @@ public class SettingSectionElement extends GuiElement {
         height = caret - y;
     }
 
+    // Re-stacks settings each frame so hidden ones collapse and the rest slide to fill the gap.
+    private void layoutSettings() {
+        int caret = y + 30;
+        for (GuiElement child : getChildren()) {
+            if (child.y != caret)
+                child.move(0, caret - child.y);
+            caret += child.getLayoutHeight();
+        }
+        height = caret - y;
+    }
+
     @Override
     public void render(GuiGraphicsExtractor context, int mouseX, int mouseY) {
+        layoutSettings();
         boolean isAnimating = animator != null && !animator.isFinished();
         if (isAnimating) {
             context.pose().pushMatrix();

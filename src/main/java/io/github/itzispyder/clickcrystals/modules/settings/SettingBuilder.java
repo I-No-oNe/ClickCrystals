@@ -2,9 +2,12 @@ package io.github.itzispyder.clickcrystals.modules.settings;
 
 import io.github.itzispyder.clickcrystals.modules.ModuleSetting;
 
+import java.util.function.Supplier;
+
 public abstract class SettingBuilder<T, B extends SettingBuilder<T, B, S>, S extends ModuleSetting<T>> {
 
     protected SettingChangeCallback<S> changeAction;
+    protected Supplier<Boolean> visibility;
     protected String name, description;
     protected T def, val;
 
@@ -12,6 +15,7 @@ public abstract class SettingBuilder<T, B extends SettingBuilder<T, B, S>, S ext
         name = description = "";
         def = val = null;
         changeAction = setting -> {};
+        visibility = () -> true;
     }
 
     protected <T> T getOrDef(T val, T def) {
@@ -43,11 +47,18 @@ public abstract class SettingBuilder<T, B extends SettingBuilder<T, B, S>, S ext
         return (B)this;
     }
 
+    // Only show this setting in GUIs while the condition holds.
+    public B visibleWhen(Supplier<Boolean> visibility) {
+        this.visibility = visibility;
+        return (B)this;
+    }
+
     protected abstract S buildSetting();
 
     public final S build() {
         S setting = buildSetting();
         setting.setChangeAction((SettingChangeCallback<ModuleSetting<T>>)changeAction);
+        setting.setVisibility(visibility);
         return setting;
     }
 }

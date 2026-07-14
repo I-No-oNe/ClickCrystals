@@ -1,5 +1,6 @@
 package io.github.itzispyder.clickcrystals.scripting;
 
+import io.github.itzispyder.clickcrystals.ClickCrystals;
 import io.github.itzispyder.clickcrystals.Global;
 import io.github.itzispyder.clickcrystals.client.commands.Command;
 import io.github.itzispyder.clickcrystals.client.system.Config;
@@ -127,7 +128,7 @@ public class ClickScript implements Global {
 
     public void printErrorDetails(Exception ex, String cmd) {
         String error = getErrorDetails(ex, cmd);
-        if (PlayerUtils.invalid()) {
+        if (PlayerUtils.invalid() || ClickCrystals.config.isDisableScriptChatErrors()) {
             system.printErr(error);
         }
         else {

@@ -255,6 +255,11 @@ public abstract class GuiElement implements Positionable, Global {
         this.height = height;
     }
 
+    // Vertical space this element occupies in a parent's layout; may differ from the rendered height (e.g. while animating).
+    public int getLayoutHeight() {
+        return height;
+    }
+
     public String getTooltip() {
         return tooltip;
     }

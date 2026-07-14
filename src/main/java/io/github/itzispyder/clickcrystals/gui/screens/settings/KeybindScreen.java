@@ -21,7 +21,7 @@ public class KeybindScreen extends DefaultBase {
     public KeybindScreen() {
         super("Keybinds Settings Screen");
 
-        ScrollPanelElement panel = new ScrollPanelElement(this, contentX + 5, contentY + 21, contentWidth - 5, contentHeight - 21);
+        ScrollPanelElement panel = new ScrollPanelElement(this, contentX + 5, contentY + 21, contentWidth - 5, contentHeight - 21).verticalStack(5);
         int caret = contentY + 25;
         int margin = contentX + 5;
 

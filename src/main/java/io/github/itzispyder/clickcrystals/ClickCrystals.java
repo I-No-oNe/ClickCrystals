@@ -52,6 +52,7 @@ import io.github.itzispyder.clickcrystals.scripting.syntax.logic.*;
 import io.github.itzispyder.clickcrystals.scripting.syntax.macros.*;
 import io.github.itzispyder.clickcrystals.scripting.syntax.macros.camera.SnapToCmd;
 import io.github.itzispyder.clickcrystals.scripting.syntax.macros.camera.TurnToCmd;
+import io.github.itzispyder.clickcrystals.scripting.syntax.macros.inventory.CraftCmd;
 import io.github.itzispyder.clickcrystals.scripting.syntax.macros.inventory.GuiDropCmd;
 import io.github.itzispyder.clickcrystals.scripting.syntax.macros.inventory.GuiQuickMoveCmd;
 import io.github.itzispyder.clickcrystals.scripting.syntax.macros.inventory.GuiSwapCmd;
@@ -213,6 +214,7 @@ public final class ClickCrystals implements ModInitializer, Global {
         ClickScript.register(new GuiSwapCmd());
         ClickScript.register(new GuiDropCmd());
         ClickScript.register(new GuiQuickMoveCmd());
+        ClickScript.register(new CraftCmd());
         ClickScript.register(new DamageCmd());
         ClickScript.register(new InteractCmd());
         ClickScript.register(new DefineCmd());

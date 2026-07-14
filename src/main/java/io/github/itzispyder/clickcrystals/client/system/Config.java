@@ -33,6 +33,7 @@ public class Config implements JsonSerializable<Config>, Global {
     private boolean overviewMode;
     private boolean disableCustomLoading;
     private boolean disableModuleToggleBroadcast;
+    private boolean disableScriptChatErrors;
     private boolean modMenuIntegration;
     private boolean devMode;
     private int readAnnouncementCount;
@@ -220,6 +221,14 @@ public class Config implements JsonSerializable<Config>, Global {
 
     public void setDisableModuleToggleBroadcast(boolean disableModuleToggleBroadcast) {
         this.disableModuleToggleBroadcast = disableModuleToggleBroadcast;
+    }
+
+    public boolean isDisableScriptChatErrors() {
+        return disableScriptChatErrors;
+    }
+
+    public void setDisableScriptChatErrors(boolean disableScriptChatErrors) {
+        this.disableScriptChatErrors = disableScriptChatErrors;
     }
 
     public String getCustomPath() {

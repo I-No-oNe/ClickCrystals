@@ -5,9 +5,12 @@ import io.github.itzispyder.clickcrystals.modules.settings.SettingBuilder;
 import io.github.itzispyder.clickcrystals.modules.settings.SettingChangeCallback;
 import io.github.itzispyder.clickcrystals.util.StringUtils;
 
+import java.util.function.Supplier;
+
 public abstract class ModuleSetting<T> {
 
     private SettingChangeCallback<ModuleSetting<T>> changeAction;
+    private Supplier<Boolean> visibility;
     private final String name, id, description;
     protected T def, val;
 
@@ -18,6 +21,7 @@ public abstract class ModuleSetting<T> {
         this.def = def;
         this.val = val;
         this.changeAction = setting -> {};
+        this.visibility = () -> true;
     }
     protected ModuleSetting(String name, String description, T val) {
         this(name, description, val, val);
@@ -64,6 +68,14 @@ public abstract class ModuleSetting<T> {
 
     public void setChangeAction(SettingChangeCallback<ModuleSetting<T>> changeAction) {
         this.changeAction = changeAction;
+    }
+
+    public boolean isVisible() {
+        return visibility.get();
+    }
+
+    public void setVisibility(Supplier<Boolean> visibility) {
+        this.visibility = visibility != null ? visibility : () -> true;
     }
 
     public class Builder extends SettingBuilder<T, Builder, ModuleSetting<T>> {

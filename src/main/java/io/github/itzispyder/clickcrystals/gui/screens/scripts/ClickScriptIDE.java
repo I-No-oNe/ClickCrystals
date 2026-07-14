@@ -63,6 +63,7 @@ public class ClickScriptIDE extends DefaultBase {
         this.put(ChatColor.YELLOW, Arrays.stream(DefineCmd.Type.values()).map(e -> e.name().toLowerCase()).toList());
         this.put(ChatColor.YELLOW, Arrays.stream(Dimensions.values()).map(e -> e.name().toLowerCase()).toList());
         this.put(ChatColor.ORANGE, ClickScript.collectNames());
+        this.comments("//", ChatColor.DARK_GRAY);
     }};
 
     private static final List<Pair<String, String>> KEYBIND_ENTRIES = List.of(
