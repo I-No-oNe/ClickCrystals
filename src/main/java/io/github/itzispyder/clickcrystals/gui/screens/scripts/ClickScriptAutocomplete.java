@@ -2,6 +2,7 @@ package io.github.itzispyder.clickcrystals.gui.screens.scripts;
 
 import io.github.itzispyder.clickcrystals.Global;
 import io.github.itzispyder.clickcrystals.client.networking.PacketMapper;
+import io.github.itzispyder.clickcrystals.modules.keybinds.Keybind;
 import io.github.itzispyder.clickcrystals.scripting.ClickScript;
 import io.github.itzispyder.clickcrystals.scripting.components.Conditionals;
 import io.github.itzispyder.clickcrystals.scripting.syntax.InputType;
@@ -10,7 +11,6 @@ import io.github.itzispyder.clickcrystals.scripting.syntax.client.ConfigCmd;
 import io.github.itzispyder.clickcrystals.scripting.syntax.client.DefineCmd;
 import io.github.itzispyder.clickcrystals.scripting.syntax.client.ModuleCmd;
 import io.github.itzispyder.clickcrystals.scripting.syntax.logic.OnEventCmd;
-import io.github.itzispyder.clickcrystals.modules.keybinds.Keybind;
 import io.github.itzispyder.clickcrystals.util.minecraft.render.RenderUtils;
 import io.github.itzispyder.clickcrystals.util.misc.Dimensions;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
