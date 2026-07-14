@@ -6,7 +6,7 @@ import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.PrimitiveTopology;
 
 public class RenderPipelines {
     
@@ -16,7 +16,8 @@ public class RenderPipelines {
 
     public static final RenderPipeline PIPELINE_LINES = RenderPipeline.builder(net.minecraft.client.renderer.RenderPipelines.DEBUG_FILLED_SNIPPET)
             .withLocation("pipeline/global_lines_pipeline")
-            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.DEBUG_LINES)
+            .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR)
+            .withPrimitiveTopology(PrimitiveTopology.DEBUG_LINES)
             .withColorTargetState(WITH_BLEND)
             .withCull(false)
             .withDepthStencilState(DEPTH_NONE)
@@ -24,7 +25,8 @@ public class RenderPipelines {
 
     public static final RenderPipeline PIPELINE_LINES_STRIP = RenderPipeline.builder(net.minecraft.client.renderer.RenderPipelines.DEBUG_FILLED_SNIPPET)
             .withLocation("pipeline/global_lines_pipeline")
-            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.DEBUG_LINE_STRIP)
+            .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR)
+            .withPrimitiveTopology(PrimitiveTopology.DEBUG_LINE_STRIP)
             .withColorTargetState(WITH_BLEND)
             .withCull(false)
             .withDepthStencilState(DEPTH_NONE)
@@ -32,7 +34,8 @@ public class RenderPipelines {
 
     public static final RenderPipeline PIPELINE_QUADS = RenderPipeline.builder(net.minecraft.client.renderer.RenderPipelines.DEBUG_FILLED_SNIPPET)
             .withLocation("pipeline/global_fill_pipeline")
-            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
+            .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR)
+            .withPrimitiveTopology(PrimitiveTopology.QUADS)
             .withColorTargetState(WITH_BLEND)
             .withCull(false)
             .withDepthStencilState(DEPTH_NONE)
@@ -40,7 +43,8 @@ public class RenderPipelines {
 
     public static final RenderPipeline PIPELINE_TRI_FAN = RenderPipeline.builder(net.minecraft.client.renderer.RenderPipelines.DEBUG_FILLED_SNIPPET)
             .withLocation("pipeline/global_fill_pipeline")
-            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLE_FAN)
+            .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR)
+            .withPrimitiveTopology(PrimitiveTopology.TRIANGLE_FAN)
             .withColorTargetState(WITH_BLEND)
             .withCull(false)
             .withDepthStencilState(DEPTH_NONE)
@@ -48,7 +52,8 @@ public class RenderPipelines {
 
     public static final RenderPipeline PIPELINE_TRI_STRIP = RenderPipeline.builder(net.minecraft.client.renderer.RenderPipelines.DEBUG_FILLED_SNIPPET)
             .withLocation("pipeline/global_fill_pipeline")
-            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLE_STRIP)
+            .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR)
+            .withPrimitiveTopology(PrimitiveTopology.TRIANGLE_STRIP)
             .withColorTargetState(WITH_BLEND)
             .withCull(false)
             .withDepthStencilState(DEPTH_NONE)
@@ -56,7 +61,8 @@ public class RenderPipelines {
 
     public static final RenderPipeline PIPELINE_TRI = RenderPipeline.builder(net.minecraft.client.renderer.RenderPipelines.DEBUG_FILLED_SNIPPET)
             .withLocation("pipeline/global_fill_pipeline")
-            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES)
+            .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR)
+            .withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
             .withColorTargetState(WITH_BLEND)
             .withCull(false)
             .withDepthStencilState(DEPTH_NONE)
@@ -64,7 +70,8 @@ public class RenderPipelines {
 
     public static final RenderPipeline PIPELINE_TEX_QUADS = RenderPipeline.builder(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED_SNIPPET)
             .withLocation("pipeline/gui_textured")
-            .withVertexFormat(DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS)
+            .withVertexBinding(0, DefaultVertexFormat.POSITION_TEX_COLOR)
+            .withPrimitiveTopology(PrimitiveTopology.QUADS)
             .withColorTargetState(WITH_BLEND)
             .withCull(false)
             .withDepthStencilState(DEPTH_NONE)
@@ -72,7 +79,8 @@ public class RenderPipelines {
 
     public static final RenderPipeline PIPELINE_TEX_TRI_FAN = RenderPipeline.builder(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED_SNIPPET)
             .withLocation("pipeline/gui_textured")
-            .withVertexFormat(DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.TRIANGLE_FAN)
+            .withVertexBinding(0, DefaultVertexFormat.POSITION_TEX_COLOR)
+            .withPrimitiveTopology(PrimitiveTopology.TRIANGLE_FAN)
             .withColorTargetState(WITH_BLEND)
             .withCull(false)
             .withDepthStencilState(DEPTH_NONE)
@@ -80,7 +88,8 @@ public class RenderPipelines {
 
     public static final RenderPipeline PIPELINE_TRI_STRIP_CULL = RenderPipeline.builder(net.minecraft.client.renderer.RenderPipelines.DEBUG_FILLED_SNIPPET)
             .withLocation("pipeline/global_fill_pipeline")
-            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLE_STRIP)
+            .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR)
+            .withPrimitiveTopology(PrimitiveTopology.TRIANGLE_STRIP)
             .withColorTargetState(WITH_BLEND)
             .withCull(true)
             .withDepthStencilState(DEPTH_LEQUAL)
@@ -88,7 +97,8 @@ public class RenderPipelines {
 
     public static final RenderPipeline PIPELINE_TRI_FAN_CULL = RenderPipeline.builder(net.minecraft.client.renderer.RenderPipelines.DEBUG_FILLED_SNIPPET)
             .withLocation("pipeline/global_fill_pipeline")
-            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLE_FAN)
+            .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR)
+            .withPrimitiveTopology(PrimitiveTopology.TRIANGLE_FAN)
             .withColorTargetState(WITH_BLEND)
             .withCull(false)
             .withDepthStencilState(DEPTH_LEQUAL)
@@ -96,7 +106,8 @@ public class RenderPipelines {
 
     public static final RenderPipeline PIPELINE_QUADS_CULL = RenderPipeline.builder(net.minecraft.client.renderer.RenderPipelines.DEBUG_FILLED_SNIPPET)
             .withLocation("pipeline/global_fill_pipeline")
-            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
+            .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR)
+            .withPrimitiveTopology(PrimitiveTopology.QUADS)
             .withColorTargetState(WITH_BLEND)
             .withCull(false)
             .withDepthStencilState(DEPTH_LEQUAL)
@@ -104,7 +115,8 @@ public class RenderPipelines {
 
     public static final RenderPipeline PIPELINE_LINES_CULL = RenderPipeline.builder(net.minecraft.client.renderer.RenderPipelines.DEBUG_FILLED_SNIPPET)
             .withLocation("pipeline/global_lines_pipeline")
-            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.DEBUG_LINES)
+            .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR)
+            .withPrimitiveTopology(PrimitiveTopology.DEBUG_LINES)
             .withColorTargetState(WITH_BLEND)
             .withCull(false)
             .withDepthStencilState(DEPTH_LEQUAL)

@@ -9,6 +9,7 @@ import io.github.itzispyder.clickcrystals.modules.modules.optimization.FullBrigh
 import net.minecraft.client.renderer.Lightmap;
 import net.minecraft.client.renderer.state.LightmapRenderState;
 import net.minecraft.util.profiling.ProfilerFiller;
+import org.joml.Vector4f;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -24,7 +25,7 @@ public abstract class MixinLightmap implements Global {
     @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/profiling/ProfilerFiller;push(Ljava/lang/String;)V", shift = At.Shift.AFTER), cancellable = true)
     private void onUpdate(LightmapRenderState renderState, CallbackInfo ci, @Local ProfilerFiller profiler) {
         if (Module.isEnabled(FullBright.class)) {
-            RenderSystem.getDevice().createCommandEncoder().clearColorTexture(this.texture, 0xFFFFFFFF);
+            RenderSystem.getDevice().createCommandEncoder().clearColorTexture(this.texture, new Vector4f(1.0F, 1.0F, 1.0F, 1.0F));
             profiler.pop();
             ci.cancel();
         }
