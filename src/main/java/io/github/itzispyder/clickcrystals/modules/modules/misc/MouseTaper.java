@@ -45,19 +45,23 @@ public class MouseTaper extends ListenerModule {
             .def(true)
             .build()
     );
+
     private final SettingSection scExclude = createSettingSection("to-exclude");
     public final ModuleSetting<Boolean> excludeBelow = scExclude.add(createBoolSetting()
             .name("exclude-below")
             .description("Do not mine blocks below your feet.")
+            .visibleWhen(() -> button.getVal() == Button.Left)
             .def(false)
             .build()
     );
     public final ModuleSetting<Boolean> excludeAbove = scExclude.add(createBoolSetting()
             .name("exclude-above")
             .description("Do not mine blocks above your head.")
+            .visibleWhen(() -> button.getVal() == Button.Left)
             .def(false)
             .build()
     );
+
     public Block targetType;
     public BlockPos targetPos;
 

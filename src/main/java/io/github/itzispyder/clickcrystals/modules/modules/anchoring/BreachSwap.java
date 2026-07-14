@@ -21,8 +21,8 @@ import net.minecraft.world.item.Items;
 public class BreachSwap extends ListenerModule {
 
     private final SettingSection sgGeneral = getGeneralSection();
-    private final SettingSection sgTiming = createSettingSection("Timing");
-    private final SettingSection sgConditions = createSettingSection("Conditions");
+    private final SettingSection sgTiming = createSettingSection("timing-settings");
+    private final SettingSection sgConditions = createSettingSection("conditions-settings");
     
     private int backTimer = 0;
     private boolean awaitingBack = false;

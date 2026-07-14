@@ -5,7 +5,7 @@ import io.github.itzispyder.clickcrystals.scripting.ScriptCommand;
 import io.github.itzispyder.clickcrystals.scripting.ScriptParser;
 import io.github.itzispyder.clickcrystals.scripting.syntax.TargetType;
 import io.github.itzispyder.clickcrystals.scripting.syntax.ThenChainable;
-import io.github.itzispyder.clickcrystals.util.minecraft.EntityUtils;
+import io.github.itzispyder.clickcrystals.modules.modules.misc.TeamDetector;
 import io.github.itzispyder.clickcrystals.util.minecraft.PlayerUtils;
 import io.github.itzispyder.clickcrystals.util.minecraft.VectorParser;
 import net.minecraft.core.BlockPos;
@@ -41,7 +41,7 @@ public class DamageCmd extends ScriptCommand implements ThenChainable {
             case NEAREST_ENTITY -> {
                 Predicate<Entity> filter = ScriptParser.parseEntityPredicate(read.nextStr());
                 PlayerUtils.runOnNearestEntity(128, filter, entity -> {
-                    if (entity instanceof Player player && EntityUtils.shouldCancelCcsAttack(player)) {
+                    if (entity instanceof Player player && TeamDetector.shouldCancelCcsAttack(player)) {
                         return; // Skip attacking teammates
                     }
                     mc.gameMode.attack(mc.player, entity);
@@ -50,7 +50,7 @@ public class DamageCmd extends ScriptCommand implements ThenChainable {
             }
             case ANY_ENTITY -> {
                 PlayerUtils.runOnNearestEntity(128, ENTITY_EXISTS, entity -> {
-                    if (entity instanceof Player player && EntityUtils.shouldCancelCcsAttack(player)) {
+                    if (entity instanceof Player player && TeamDetector.shouldCancelCcsAttack(player)) {
                         return; // Skip attacking teammates
                     }
                     mc.gameMode.attack(mc.player, entity);

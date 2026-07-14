@@ -1,10 +1,7 @@
 package io.github.itzispyder.clickcrystals.util.minecraft;
 
 import io.github.itzispyder.clickcrystals.Global;
-import io.github.itzispyder.clickcrystals.modules.Module;
-import io.github.itzispyder.clickcrystals.modules.modules.misc.TeamDetector;
 import io.github.itzispyder.clickcrystals.util.misc.Voidable;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -23,8 +20,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.*;
-import net.minecraft.world.scores.PlayerTeam;
-import net.minecraft.world.scores.Scoreboard;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -250,46 +245,6 @@ public class EntityUtils implements Global {
 
         if (ent != null)
             function.accept(ent);
-    }
-
-    public static boolean isTeammate(Player target) {
-        TeamDetector teamDetector = Module.get(TeamDetector.class);
-        if (!teamDetector.isEnabled())
-            return false;
-
-        // Check manual list first
-        String[] names = teamDetector.playerNames.getVal().split(",");
-        String targetName = target.getName().getString();
-        for (String name : names) {
-            if (name.trim().equalsIgnoreCase(targetName)) {
-                return true;
-            }
-        }
-
-        // Check automatic detection
-        if (teamDetector.teamFindingMethod.getVal() == TeamDetector.TeamsMethod.SCOREBOARD)
-            return isSameScoreboardTeam(target);
-        else if (teamDetector.teamFindingMethod.getVal() == TeamDetector.TeamsMethod.COLOR_NAME)
-            return isSameColorNameTeam(target);
-        return false;
-    }
-
-    public static boolean shouldCancelCcsAttack(Player target) {
-        TeamDetector teamDetector = Module.get(TeamDetector.class);
-        return teamDetector.isEnabled() && teamDetector.cancelCcs.getVal() && isTeammate(target);
-    }
-  
-    public static boolean isSameScoreboardTeam(Player player) {
-        Scoreboard scoreboard = PlayerUtils.getWorld().getScoreboard();
-        PlayerTeam playerTeam = scoreboard.getPlayerTeam(PlayerUtils.player().getName().getString());
-        PlayerTeam otherPlayerTeam = scoreboard.getPlayerTeam(player.getName().getString());
-        return playerTeam != null && playerTeam.equals(otherPlayerTeam);
-    }
-
-    public static boolean isSameColorNameTeam(Player player) {
-        int playerColor = PlayerUtils.player().getTeamColor();
-        int targetColor = player.getTeamColor();
-        return playerColor == targetColor && playerColor != ChatUtils.getFormattingChar(ChatFormatting.WHITE);
     }
 
     public static List<Entity> getEntitiesAt(BlockPos pos) {

@@ -50,6 +50,7 @@ public class ChatPrefix extends Module implements Listener {
             .min(0.0)
             .max(10.0)
             .name("mentions-volume")
+            .visibleWhen(mentions::getVal)
             .description("Mention sound volume.")
             .def(1.0)
             .build()

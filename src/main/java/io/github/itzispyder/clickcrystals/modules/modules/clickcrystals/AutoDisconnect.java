@@ -31,47 +31,56 @@ public class AutoDisconnect extends ListenerModule {
     public final ModuleSetting<Double> range = checks.add(createDoubleSetting()
             .max(15)
             .min(0)
-            .name("Range")
+            .name("range")
             .description("The maximum distance from the player to check for blocks/entities.")
             .def(5.0)
             .decimalPlaces(1)
             .build()
     );
-    public final ModuleSetting<Double> hp = playerHealth.add(createDoubleSetting()
+
+    public final ModuleSetting<Boolean> hp = playerHealth.add(createBoolSetting()
+            .name("player-health")
+            .description("Automatically disconnects when the player's health is below specified amount.")
+            .def(false)
+            .build()
+    );
+
+    public final ModuleSetting<Double> hpAmount = playerHealth.add(createDoubleSetting()
+            .name("player-health-percentage")
+            .description("The amount of health to check for.")
+            .visibleWhen(hp::getVal)
             .max(19)
             .min(0)
-            .name("Player Health Percentage")
-            .description("Automatically disconnects when health is lower or equal to this value. Set to 0 to disable.")
             .def(6.0)
             .decimalPlaces(1)
             .build()
     );
     public final ModuleSetting<Boolean> anchors = checks.add(createBoolSetting()
-            .name("Check Anchors")
+            .name("check-anchors")
             .description("Disconnect if a respawn anchor is found within the specified range.")
             .def(true)
             .build()
     );
     public final ModuleSetting<Boolean> glowstone = checks.add(createBoolSetting()
-            .name("Check Loaded Anchors")
+            .name("check-loaded-anchors")
             .description("Disconnect if a loaded respawn anchor is found within the specified range.")
             .def(true)
             .build()
     );
     public final ModuleSetting<Boolean> crystals = checks.add(createBoolSetting()
-            .name("Check Crystals")
+            .name("check-crystals")
             .description("Disconnect if an end crystal is found within the specified range.")
             .def(true)
             .build()
     );
     public final ModuleSetting<Boolean> newPlayers = checks.add(createBoolSetting()
-            .name("Check New Players")
+            .name("check-new-players")
             .description("Disconnect if a new player is rendered within the player's render distance.")
             .def(false)
             .build()
     );
     public final ModuleSetting<Boolean> autoDisable = moduleSettings.add(createBoolSetting()
-            .name("Auto Disable")
+            .name("auto-disable")
             .description("Automatically disable this module after it triggers a disconnect.")
             .def(true)
             .build()
@@ -110,8 +119,8 @@ public class AutoDisconnect extends ListenerModule {
         List<Integer> rangeList = getRangeList(maxRange);
 
         if (isEnabled()) {
-            if (!PlayerUtils.player().isDeadOrDying() && PlayerUtils.player().getHealth() <= hp.getVal() && hp.getVal() != 0) {
-                disconnectPlayer("Player health is below " + hp.getVal());
+            if (!PlayerUtils.player().isDeadOrDying() && healthCheck()) {
+                disconnectPlayer("Player health is below " + hpAmount.getVal());
                 return;
             }
         }
@@ -154,5 +163,10 @@ public class AutoDisconnect extends ListenerModule {
                 return;
             }
         }
+    }
+
+    private boolean healthCheck() {
+        double limit = hpAmount.getVal();
+        return hp.getVal() && limit > 0 && PlayerUtils.player().getHealth() <= limit;
     }
 }

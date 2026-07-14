@@ -30,18 +30,21 @@ public class AutoClicker extends ListenerModule {
     public final ModuleSetting<Boolean> leftSpam = scLeft.add(createBoolSetting()
             .name("left-spam")
             .description("Spam")
+            .visibleWhen(left::getVal)
             .def(true)
             .build()
     );
     public final ModuleSetting<Boolean> leftOnlyHold = scLeft.add(createBoolSetting()
             .name("left-only-hold")
             .description("Spam only when held")
+            .visibleWhen(() -> left.getVal() && leftSpam.getVal())
             .def(true)
             .build()
     );
     public final ModuleSetting<Integer> leftCps = scLeft.add(createIntSetting()
             .name("left-cps")
             .description("Clicks per second")
+            .visibleWhen(() -> left.getVal() && leftSpam.getVal())
             .max(50)
             .min(1)
             .def(10)
@@ -50,11 +53,13 @@ public class AutoClicker extends ListenerModule {
     public final ModuleSetting<Double> leftChance = scLeft.add(createDoubleSetting()
             .name("left-chance")
             .description("Random")
+            .visibleWhen(() -> left.getVal() && leftSpam.getVal())
             .max(1.0)
             .min(0.0)
             .def(1.0)
             .build()
     );
+
     private final SettingSection scRight = createSettingSection("right");
     public final ModuleSetting<Boolean> right = scRight.add(createBoolSetting()
             .name("right")
@@ -65,18 +70,21 @@ public class AutoClicker extends ListenerModule {
     public final ModuleSetting<Boolean> rightSpam = scRight.add(createBoolSetting()
             .name("right-spam")
             .description("Spam")
+            .visibleWhen(right::getVal)
             .def(true)
             .build()
     );
     public final ModuleSetting<Boolean> rightOnlyHold = scRight.add(createBoolSetting()
             .name("right-only-hold")
             .description("Spam only when held")
+            .visibleWhen(() -> right.getVal() && rightSpam.getVal())
             .def(true)
             .build()
     );
     public final ModuleSetting<Integer> rightCps = scRight.add(createIntSetting()
             .name("right-cps")
             .description("Clicks per second")
+            .visibleWhen(() -> right.getVal() && rightSpam.getVal())
             .max(50)
             .min(1)
             .def(10)
@@ -85,11 +93,13 @@ public class AutoClicker extends ListenerModule {
     public final ModuleSetting<Double> rightChance = scRight.add(createDoubleSetting()
             .name("right-chance")
             .description("Random")
+            .visibleWhen(() -> right.getVal() && rightSpam.getVal())
             .max(1.0)
             .min(0.0)
             .def(1.0)
             .build()
     );
+
     private final SettingSection scShared = createSettingSection("shared-settings");
     public final ModuleSetting<Boolean> onlyWhenTarget = scShared.add(createBoolSetting()
             .name("only-when-target")
@@ -100,6 +110,7 @@ public class AutoClicker extends ListenerModule {
     public final ModuleSetting<Boolean> noBabies = scShared.add(createBoolSetting()
             .name("no-babies")
             .description("Stop when targeting baby entity")
+            .visibleWhen(onlyWhenTarget::getVal)
             .def(true)
             .build()
     );

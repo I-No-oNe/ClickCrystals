@@ -4,7 +4,7 @@ import io.github.itzispyder.clickcrystals.scripting.ScriptArgs;
 import io.github.itzispyder.clickcrystals.scripting.ScriptCommand;
 import io.github.itzispyder.clickcrystals.scripting.ScriptParser;
 import io.github.itzispyder.clickcrystals.scripting.syntax.TargetType;
-import io.github.itzispyder.clickcrystals.util.minecraft.EntityUtils;
+import io.github.itzispyder.clickcrystals.modules.modules.misc.TeamDetector;
 import io.github.itzispyder.clickcrystals.util.minecraft.PlayerUtils;
 import io.github.itzispyder.clickcrystals.util.minecraft.PolarParser;
 import io.github.itzispyder.clickcrystals.util.minecraft.VectorParser;
@@ -53,14 +53,14 @@ public class TurnToCmd extends ScriptCommand {
             case NEAREST_ENTITY -> {
                 Predicate<Entity> filter = ScriptParser.parseEntityPredicate(read.nextStr());
                 PlayerUtils.runOnNearestEntity(128, filter, entity -> {
-                    if (!(entity instanceof Player) || !EntityUtils.isTeammate((Player) entity))
+                    if (!(entity instanceof Player) || !TeamDetector.isTeammate((Player) entity))
                         turn(entity.position(), eyes, args);
                 });
             }
 
             case ANY_BLOCK -> PlayerUtils.runOnNearestBlock(32, (pos, state) -> true, (pos, state) -> turn(VectorParser.getCenter(pos), eyes, args));
             case ANY_ENTITY -> PlayerUtils.runOnNearestEntity(128, Entity::isAlive, entity -> {
-                if (!(entity instanceof Player) || !EntityUtils.isTeammate(((Player) entity)))
+                if (!(entity instanceof Player) || !TeamDetector.isTeammate(((Player) entity)))
                     turn(entity.position(), eyes, args);
             });
 

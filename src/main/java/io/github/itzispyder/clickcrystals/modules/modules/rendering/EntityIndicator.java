@@ -40,18 +40,19 @@ public class EntityIndicator extends ListenerModule {
             .def(50)
             .build()
     );
-    public final ModuleSetting<Integer> spriteSize = scRender.add(createIntSetting()
-            .name("sprite-size")
-            .description("Sprite display size.")
-            .max(16)
-            .min(5)
-            .def(10)
-            .build()
-    );
     public final ModuleSetting<RenderMode> renderMode = scRender.add(createEnumSetting(RenderMode.class)
             .name("render-mode")
             .description("How you want the HUD to be rendered")
             .def(RenderMode.COMPASS)
+            .build()
+    );
+    public final ModuleSetting<Integer> spriteSize = scRender.add(createIntSetting()
+            .name("sprite-size")
+            .description("Sprite display size.")
+            .visibleWhen(() -> renderMode.getVal() == RenderMode.COMPASS)
+            .max(16)
+            .min(5)
+            .def(10)
             .build()
     );
 

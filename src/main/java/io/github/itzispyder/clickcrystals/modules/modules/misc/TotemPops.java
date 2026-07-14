@@ -44,6 +44,7 @@ public class TotemPops extends Module implements Listener {
     public final ModuleSetting<String> ownName = general.add(StringSetting.create()
             .name("own-pop-name")
             .description("Want to replace your name with in pop messages? (%player% for own name)")
+            .visibleWhen(highlightOwn::getVal)
             .def("&6&n%player%")
             .build()
     );

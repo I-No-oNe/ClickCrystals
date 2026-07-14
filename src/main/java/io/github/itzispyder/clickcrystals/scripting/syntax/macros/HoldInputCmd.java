@@ -5,7 +5,7 @@ import io.github.itzispyder.clickcrystals.scripting.ScriptArgs;
 import io.github.itzispyder.clickcrystals.scripting.ScriptCommand;
 import io.github.itzispyder.clickcrystals.scripting.syntax.InputType;
 import io.github.itzispyder.clickcrystals.scripting.syntax.ThenChainable;
-import io.github.itzispyder.clickcrystals.util.minecraft.EntityUtils;
+import io.github.itzispyder.clickcrystals.modules.modules.misc.TeamDetector;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.EntityHitResult;
 
@@ -38,7 +38,7 @@ public class HoldInputCmd extends ScriptCommand implements ThenChainable {
         
         // check for teammate protection on attack inputs
         if ((a == InputType.ATTACK || a == InputType.LEFT) && mc.hitResult instanceof EntityHitResult hit) {
-            if (hit.getEntity() instanceof Player player && EntityUtils.shouldCancelCcsAttack(player)) {
+            if (hit.getEntity() instanceof Player player && TeamDetector.shouldCancelCcsAttack(player)) {
                 read.executeThenChain();
                 return; // skip holding attack on teammate
             }

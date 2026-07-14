@@ -26,6 +26,7 @@ public class AxeSwap extends Module implements Listener {
     private final ModuleSetting<Double> shieldFov = getGeneralSection().add(DoubleSetting.create()
             .name("shield-fov")
             .description("Detection angle for directional shield in degrees")
+            .visibleWhen(directionalShield::getVal)
             .def(60.0)
             .min(10.0)
             .max(180.0)
