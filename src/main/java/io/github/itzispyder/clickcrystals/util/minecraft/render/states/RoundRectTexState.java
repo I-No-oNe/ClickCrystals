@@ -5,7 +5,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import io.github.itzispyder.clickcrystals.util.MathUtils;
-import io.github.itzispyder.clickcrystals.util.minecraft.render.ClickCrystalsRenderPipelines;
+import io.github.itzispyder.clickcrystals.util.minecraft.render.RenderPipelines;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
@@ -16,7 +16,7 @@ import net.minecraft.util.Mth;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix3x2f;
 
-public class ClickCrystalsRoundRectTexState implements GuiElementRenderState {
+public class RoundRectTexState implements GuiElementRenderState {
 
     private final RenderPipeline pipeline;
     private final TextureSetup texture;
@@ -24,7 +24,7 @@ public class ClickCrystalsRoundRectTexState implements GuiElementRenderState {
     public float x, y, w, h, r;
     private final ScreenRectangle scissor, bounds;
 
-    public ClickCrystalsRoundRectTexState(RenderPipeline pipeline, TextureSetup texture, Matrix3x2f pose, float x, float y, float w, float h, float r, ScreenRectangle scissor, ScreenRectangle bounds) {
+    public RoundRectTexState(RenderPipeline pipeline, TextureSetup texture, Matrix3x2f pose, float x, float y, float w, float h, float r, ScreenRectangle scissor, ScreenRectangle bounds) {
         this.pipeline = pipeline;
         this.texture = texture;
         this.pose = pose;
@@ -37,8 +37,8 @@ public class ClickCrystalsRoundRectTexState implements GuiElementRenderState {
         this.bounds = bounds;
     }
 
-    public ClickCrystalsRoundRectTexState(Matrix3x2f pose, Identifier texture, float x, float y, float w, float h, float r, ScreenRectangle scissor) {
-        this(ClickCrystalsRenderPipelines.PIPELINE_TEX_QUADS,
+    public RoundRectTexState(Matrix3x2f pose, Identifier texture, float x, float y, float w, float h, float r, ScreenRectangle scissor) {
+        this(RenderPipelines.PIPELINE_TEX_QUADS,
                 TextureSetup.singleTexture(Minecraft.getInstance()
                         .getTextureManager()
                         .getTexture(texture)
@@ -53,7 +53,7 @@ public class ClickCrystalsRoundRectTexState implements GuiElementRenderState {
                 ));
     }
 
-    public ClickCrystalsRoundRectTexState(GuiGraphicsExtractor context, Identifier texture, float x, float y, float w, float h, float r) {
+    public RoundRectTexState(GuiGraphicsExtractor context, Identifier texture, float x, float y, float w, float h, float r) {
         this(new Matrix3x2f(context.pose()), texture, x, y, w, h, r, context.scissorStack.peek());
     }
 

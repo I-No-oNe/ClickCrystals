@@ -9,7 +9,7 @@ import java.util.function.Function;
 public interface Typeable extends Global {
 
     default boolean onKey(int key, int scan) {
-        if (!(mc.screen instanceof GuiScreen screen))
+        if (!(mc.gui.screen() instanceof GuiScreen screen))
             return false;
 
         if (key == GLFW.GLFW_KEY_ESCAPE) {

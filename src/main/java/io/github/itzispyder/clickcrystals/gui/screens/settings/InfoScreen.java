@@ -90,6 +90,6 @@ public class InfoScreen extends DefaultBase {
 
     @Override
     public void resize(int width, int height) {
-        minecraft.setScreen(new InfoScreen());
+        minecraft.setScreenAndShow(new InfoScreen());
     }
 }

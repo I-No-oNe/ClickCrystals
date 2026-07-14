@@ -78,10 +78,10 @@ public class ModuleElement extends GuiElement {
             module.setEnabled(!module.isEnabled(), false);
         }
         else if (button == 1) {
-            mc.setScreen(new ModuleEditScreen(module));
+            mc.setScreenAndShow(new ModuleEditScreen(module));
         }
         else if (button == 2 && module instanceof ScriptedModule m) {
-            mc.setScreen(new ClickScriptIDE(m));
+            mc.setScreenAndShow(new ClickScriptIDE(m));
         }
     }
 

@@ -24,7 +24,7 @@ public class RenderUtils3d {
         buf.addVertex(mat, (float)x1, (float)y1, (float)z1).setColor(color);
         buf.addVertex(mat, (float)x2, (float)y2, (float)z2).setColor(color);
 
-        drawBuffer(buf, ClickCrystalsRenderLayers.LINES);
+        drawBuffer(buf, RenderLayers.LINES);
     }
 
     public static void drawFlatLine(PoseStack matrices, double x1, double y1, double z1, double x2, double y2, double z2, double width, int color) {
@@ -51,7 +51,7 @@ public class RenderUtils3d {
         buf.addVertex(mat, (float)v3.x, (float)v3.y, (float)v3.z).setColor(colorQuat);
         buf.addVertex(mat, (float)v4.x, (float)v4.y, (float)v4.z).setColor(colorQuat);
 
-        drawBuffer(buf, ClickCrystalsRenderLayers.QUADS);
+        drawBuffer(buf, RenderLayers.QUADS);
 
         // lines
         drawLine(matrices, v1.x, v1.y, v1.z, v2.x, v2.y, v2.z, colorFull);
@@ -96,7 +96,7 @@ public class RenderUtils3d {
         buf.addVertex(mat, (float)(x + 1) + diff, (float)(y + 1), (float)(z + 1)).setColor(color);
         buf.addVertex(mat, (float)(x + 1) + diff, (float)(y + 0), (float)(z + 1)).setColor(color);
 
-        drawBuffer(buf, ClickCrystalsRenderLayers.QUADS);
+        drawBuffer(buf, RenderLayers.QUADS);
     }
 
     public static void fillBox(PoseStack matrices, AABB box, int color) {
@@ -137,7 +137,7 @@ public class RenderUtils3d {
         buf.addVertex(mat, x2, y2, z2).setColor(color);
         buf.addVertex(mat, x2, y1, z2).setColor(color);
 
-        drawBuffer(buf, cull ? ClickCrystalsRenderLayers.QUADS_CULL : ClickCrystalsRenderLayers.QUADS);
+        drawBuffer(buf, cull ? RenderLayers.QUADS_CULL : RenderLayers.QUADS);
     }
 
     public static void fillRectPrism(PoseStack matrices, float x1, float y1, float z1, float x2, float y2, float z2, int color) {
@@ -156,7 +156,7 @@ public class RenderUtils3d {
             buf.addVertex(mat, cx, (float)(y + height), cz).setColor(color);
         }
 
-        drawBuffer(buf, ClickCrystalsRenderLayers.TRI_STRIP);
+        drawBuffer(buf, RenderLayers.TRI_STRIP);
     }
 
     public static void fillCylGradient(PoseStack matrices, double x, double y, double z, double radius, double height, int colorBottom, int colorTop) {
@@ -171,7 +171,7 @@ public class RenderUtils3d {
             buf.addVertex(mat, cx, (float)(y + height), cz).setColor(colorTop);
         }
 
-        drawBuffer(buf, ClickCrystalsRenderLayers.TRI_STRIP_CULL);
+        drawBuffer(buf, RenderLayers.TRI_STRIP_CULL);
     }
 
     public static void drawCube(PoseStack matrices, double x, double y, double z, int color) {
@@ -205,7 +205,7 @@ public class RenderUtils3d {
         buf.addVertex(mat, (float)(x + 0), (float)(y + 0), (float)(z + 1)).setColor(color);
         buf.addVertex(mat, (float)(x + 0), (float)(y + 1), (float)(z + 1)).setColor(color);
 
-        drawBuffer(buf, ClickCrystalsRenderLayers.LINES);
+        drawBuffer(buf, RenderLayers.LINES);
     }
 
     public static void renderBlock(PoseStack matrices, Vec3 block, int color) {
@@ -253,7 +253,7 @@ public class RenderUtils3d {
         buf.addVertex(mat, (float)x1, (float)y1, (float)z2).setColor(color);
         buf.addVertex(mat, (float)x1, (float)y2, (float)z2).setColor(color);
 
-        drawBuffer(buf, cull ? ClickCrystalsRenderLayers.LINES_CULL : ClickCrystalsRenderLayers.LINES);
+        drawBuffer(buf, cull ? RenderLayers.LINES_CULL : RenderLayers.LINES);
     }
 
     public static void drawRectPrism(PoseStack matrices, double x1, double y1, double z1, double x2, double y2, double z2, int color) {

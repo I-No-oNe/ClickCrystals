@@ -150,7 +150,11 @@ public class VectorParser {
     }
 
     public BlockPos getBlockPos() {
-        return new BlockPos((int)x, (int)y, (int)z);
+        return BlockPos.containing(x, y, z);
+    }
+
+    public Vec3 getBlockCenter() {
+        return getCenter(getBlockPos());
     }
 
     public BlockState getBlock(Level world) {
@@ -167,5 +171,9 @@ public class VectorParser {
 
     public double getZ() {
         return z;
+    }
+
+    public static Vec3 getCenter(BlockPos pos) {
+        return new Vec3(0.5 + pos.getX(), 0.5 + pos.getY(), 0.5 + pos.getZ());
     }
 }

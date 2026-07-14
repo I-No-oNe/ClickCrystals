@@ -18,7 +18,7 @@ public class KeyPressEvent extends Event implements Cancellable {
     }
 
     public boolean isScreenNull() {
-        return mc.screen == null;
+        return mc.gui.screen() == null;
     }
 
     public ClickType getAction() {

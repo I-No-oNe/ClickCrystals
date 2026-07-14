@@ -9,6 +9,7 @@ import io.github.itzispyder.clickcrystals.modules.Module;
 import io.github.itzispyder.clickcrystals.util.MathUtils;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,6 +66,6 @@ public class CrystPerSec extends Module implements Listener {
 
     private boolean canUpdateCounter(Entity ent) {
         final EntityType<?> type = ent.getType();
-        return type == EntityType.END_CRYSTAL || type == EntityType.MAGMA_CUBE;
+        return type == EntityTypes.END_CRYSTAL || type == EntityTypes.MAGMA_CUBE;
     }
 }

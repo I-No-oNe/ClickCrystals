@@ -385,8 +385,9 @@ public class ClickScriptIDE extends DefaultBase {
                     writer.write(textField.getContent());
                 }
                 ReloadCommand.reload();
-                if (mc.screen instanceof ScriptsBrowsingScreen) {
-                    mc.setScreen(new ScriptsBrowsingScreen());
+
+                if (mc.gui.screen() instanceof ScriptsBrowsingScreen) {
+                    mc.setScreenAndShow(new ScriptsBrowsingScreen());
                 }
             } catch (Exception ex) {
                 system.printErr("Error: IDE failed to save script");
@@ -409,6 +410,6 @@ public class ClickScriptIDE extends DefaultBase {
 
     @Override
     public void resize(int width, int height) {
-        mc.setScreen(new ClickScriptIDE(currentFile));
+        mc.setScreenAndShow(new ClickScriptIDE(currentFile));
     }
 }

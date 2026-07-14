@@ -51,14 +51,14 @@ public abstract class DefaultBase extends AnimatedBase {
 
         buttonSearch = AbstractElement.create().dimensions(navWidth, 12)
                 .tooltip("LEFT-CLICK to search")
-                .onPress(button -> mc.setScreen(new SearchScreen()))
+                .onPress(button -> mc.setScreenAndShow(new SearchScreen()))
                 .onRender((context, mouseX, mouseY, button) -> {
                     RenderUtils.fillRoundHoriLine(context, button.x, button.y, navWidth, 12, Shades.LIGHT);
                     RenderUtils.drawText(context, "§7Search module i.e.", button.x + 7, button.y + button.height / 3, 0.7F, false);
                 }).build();
         buttonHome = AbstractElement.create().dimensions(navWidth, 10)
                 .tooltip("Back to Home")
-                .onPress(button -> mc.setScreen(new HomeScreen()))
+                .onPress(button -> mc.setScreenAndShow(new HomeScreen()))
                 .onRender((context, mouseX, mouseY, button) -> {
                     if (button.isHovered(mouseX, mouseY)) {
                         RenderUtils.fillRoundHoriLine(context, button.x, button.y, navWidth, 10, Shades.LIGHT_GRAY);
@@ -78,7 +78,7 @@ public abstract class DefaultBase extends AnimatedBase {
                 }).build();
         buttonNews = AbstractElement.create().dimensions(navWidth, 10)
                 .tooltip("View announcements")
-                .onPress(button -> mc.setScreen(new BulletinScreen()))
+                .onPress(button -> mc.setScreenAndShow(new BulletinScreen()))
                 .onRender((context, mouseX, mouseY, button) -> {
                     if (button.isHovered(mouseX, mouseY)) {
                         RenderUtils.fillRoundHoriLine(context, button.x, button.y, navWidth, 10, Shades.LIGHT_GRAY);
@@ -88,7 +88,7 @@ public abstract class DefaultBase extends AnimatedBase {
                 }).build();
         buttonSettings = AbstractElement.create().dimensions(navWidth, 10)
                 .tooltip("Browse settings")
-                .onPress(button -> mc.setScreen(new SettingScreen()))
+                .onPress(button -> mc.setScreenAndShow(new SettingScreen()))
                 .onRender((context, mouseX, mouseY, button) -> {
                     if (button.isHovered(mouseX, mouseY)) {
                         RenderUtils.fillRoundHoriLine(context, button.x, button.y, navWidth, 10, Shades.LIGHT_GRAY);

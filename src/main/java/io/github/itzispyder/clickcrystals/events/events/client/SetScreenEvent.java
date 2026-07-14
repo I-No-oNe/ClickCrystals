@@ -10,7 +10,7 @@ public class SetScreenEvent extends Event implements Cancellable {
     private boolean cancelled;
 
     public SetScreenEvent(Screen screen) {
-        this.previousScreen = mc.screen;
+        this.previousScreen = mc.gui.screen();
         this.screen = screen;
         this.cancelled = false;
     }

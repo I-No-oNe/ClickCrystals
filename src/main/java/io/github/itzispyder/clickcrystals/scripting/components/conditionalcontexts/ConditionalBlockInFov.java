@@ -28,8 +28,8 @@ public class ConditionalBlockInFov implements Conditional {
 
     private boolean validBlock(BlockPos pos, float fovDeg) {
         if (fovDeg != 360 && PlayerUtils.valid())
-            if (!ConditionalEntityInFov.isPointInFov(PlayerUtils.getEyes(), PlayerUtils.getDir(), fovDeg, pos.getCenter()))
+            if (!ConditionalEntityInFov.isPointInFov(PlayerUtils.getEyes(), PlayerUtils.getDir(), fovDeg, VectorParser.getCenter(pos)))
                 return false;
-        return pos.getCenter().distanceTo(PlayerUtils.getPos()) <= fovDeg;
+        return VectorParser.getCenter(pos).distanceTo(PlayerUtils.getPos()) <= fovDeg;
     }
 }

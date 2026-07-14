@@ -11,6 +11,7 @@ import io.github.itzispyder.clickcrystals.modules.modules.ListenerModule;
 import io.github.itzispyder.clickcrystals.modules.settings.SettingSection;
 import io.github.itzispyder.clickcrystals.util.minecraft.ChatUtils;
 import io.github.itzispyder.clickcrystals.util.minecraft.PlayerUtils;
+import io.github.itzispyder.clickcrystals.util.minecraft.VectorParser;
 import io.github.itzispyder.clickcrystals.util.minecraft.render.RenderUtils3d;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
@@ -82,8 +83,8 @@ public class Tunnel3x3 extends ListenerModule {
             this.setEnabled(false, false);
             return;
         }
-        if (mc.screen != null)
-            mc.screen.onClose();
+        if (mc.gui.screen() != null)
+            mc.gui.screen().onClose();
 
         LocalPlayer p = PlayerUtils.player();
         dir = p.getMotionDirection();
@@ -103,15 +104,15 @@ public class Tunnel3x3 extends ListenerModule {
 
         if (mc != null && mc.options != null) {
             mc.options.keyAttack.setDown(false);
-            if (reopenOnDisable.getVal() && mc.screen == null) {
-                mc.setScreen(new ModuleEditScreen(this));
+            if (reopenOnDisable.getVal() && mc.gui.screen() == null) {
+                mc.setScreenAndShow(new ModuleEditScreen(this));
             }
         }
     }
 
     @EventHandler
     private void onMouseClick(MouseClickEvent e) {
-        if (e.getButton() == 0 && mc.screen == null)
+        if (e.getButton() == 0 && mc.gui.screen() == null)
             e.setCancelled(true);
     }
 
@@ -191,7 +192,7 @@ public class Tunnel3x3 extends ListenerModule {
     private boolean validForBreaking(int targetIndex) {
         if (targetIndex < 0 || targetIndex >= targets.size())
             return false;
-        if (PlayerUtils.getEyes().distanceTo(targets.get(targetIndex).getCenter()) > PlayerUtils.player().blockInteractionRange())
+        if (PlayerUtils.getEyes().distanceTo(VectorParser.getCenter(targets.get(targetIndex))) > PlayerUtils.player().blockInteractionRange())
             return false;
         Level w = PlayerUtils.getWorld();
         BlockPos pos = targets.get(targetIndex);
@@ -253,7 +254,7 @@ public class Tunnel3x3 extends ListenerModule {
 
     private void target() {
         mc.options.keyAttack.setDown(false);
-        Vec3 target = targets.get(index).getCenter().subtract(PlayerUtils.getEyes());
+        Vec3 target = VectorParser.getCenter(targets.get(index)).subtract(PlayerUtils.getEyes());
         system.cameraRotator.ready()
                 .addTicket(target)
                 .lockCursor()

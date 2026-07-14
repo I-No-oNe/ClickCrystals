@@ -115,7 +115,7 @@ public class GuiCursor extends Module implements Listener {
 
     private void pickAndMoveCursor() {
         if (totemSlots.isEmpty()) {
-            if (mc.screen instanceof InventoryScreen && retryTicks <= 0)
+            if (mc.gui.screen() instanceof InventoryScreen && retryTicks <= 0)
                 retryTicks = MAX_RETRY_TICKS;
             return;
         }
@@ -145,7 +145,7 @@ public class GuiCursor extends Module implements Listener {
         // collectState 1 means render events fired last frame — all slots are collected, safe to pick
         if (collectState == 1) {
             collectState = -1;
-            if (mc.screen instanceof InventoryScreen)
+            if (mc.gui.screen() instanceof InventoryScreen)
                 pickAndMoveCursor();
             totemSlots.clear();
             allSlots.clear();
@@ -153,7 +153,7 @@ public class GuiCursor extends Module implements Listener {
         }
 
         if (retryTicks <= 0 || collectState != -1) return;
-        if (!(mc.screen instanceof InventoryScreen)) {
+        if (!(mc.gui.screen() instanceof InventoryScreen)) {
             retryTicks = 0;
             return;
         }
@@ -199,7 +199,7 @@ public class GuiCursor extends Module implements Listener {
         if (!(e.getPacket() instanceof ServerboundContainerClickPacket packet)) return;
 
         ItemStack stack = InvUtils.inv().getItem(packet.slotNum());
-        boolean clickedTotem = mc.screen instanceof InventoryScreen
+        boolean clickedTotem = mc.gui.screen() instanceof InventoryScreen
                 && stack.is(Items.TOTEM_OF_UNDYING)
                 && totemShiftHolder.getVal();
         boolean actionMatches = !shiftKeyDown && packet.containerInput() == ContainerInput.PICKUP;

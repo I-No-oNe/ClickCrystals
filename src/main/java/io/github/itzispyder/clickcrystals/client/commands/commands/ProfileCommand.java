@@ -22,7 +22,7 @@ public class ProfileCommand extends Command {
     public void build(LiteralArgumentBuilder<ClientSuggestionProvider> builder) {
         builder.executes(cxt -> {
                     system.scheduler.runDelayedTask(() -> {
-                        mc.execute(() -> mc.setScreen(new ProfilesScreen()));
+                        mc.execute(() -> mc.setScreenAndShow(new ProfilesScreen()));
                     }, 5 * 50);
                     return SINGLE_SUCCESS;
                 })

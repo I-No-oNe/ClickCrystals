@@ -56,7 +56,7 @@ public class ScriptsBrowsingScreen extends BrowsingScreen {
         this.backButton = new ButtonElement("< Back", baseX + baseWidth - 50 - 10, baseY + 10, 50, 15, (mx, my, self) -> {
             File parent = new File(parentFolder).getParentFile();
             parentFolder = parent.getPath();
-            mc.execute(() -> mc.setScreen(new ScriptsBrowsingScreen()));
+            mc.execute(() -> mc.setScreenAndShow(new ScriptsBrowsingScreen()));
             this.removeChild(self);
         });
         updateButtonDisplay();
@@ -136,7 +136,7 @@ public class ScriptsBrowsingScreen extends BrowsingScreen {
 
     @Override
     public void resize(int width, int height) {
-        minecraft.setScreen(new ScriptsBrowsingScreen());
+        minecraft.setScreenAndShow(new ScriptsBrowsingScreen());
     }
 
     protected class FolderElement extends ModuleElement {
@@ -229,9 +229,9 @@ public class ScriptsBrowsingScreen extends BrowsingScreen {
 
         @Override
         public void onClick(double mouseX, double mouseY, int button) {
-//            mc.setScreen(new DownloadScriptScreenOld());
+//            mc.setScreenAndShow(new DownloadScriptScreenOld());
             if (button == 0)
-                mc.setScreen(new DownloadScriptScreen());
+                mc.setScreenAndShow(new DownloadScriptScreen());
         }
     }
 
@@ -299,7 +299,7 @@ public class ScriptsBrowsingScreen extends BrowsingScreen {
             public boolean onKey(int key, int scancode) {
                 if (key != GLFW.GLFW_KEY_ENTER)
                     return super.onKey(key, scancode);
-                if (!(mc.screen instanceof GuiScreen screen))
+                if (!(mc.gui.screen() instanceof GuiScreen screen))
                     return true;
                 if (getQuery().isEmpty()) {
                     screen.selected = null;
@@ -369,14 +369,14 @@ public class ScriptsBrowsingScreen extends BrowsingScreen {
                 String preText = newModule.formatted(moduleId);
                 FileValidationUtils.quickWrite(file, preText);
             }
-            mc.setScreen(new ClickScriptIDE(file));
+            mc.setScreenAndShow(new ClickScriptIDE(file));
         }
 
         public static void createScriptWithPretext(String moduleId, String pretext) {
             File file = new File(parentFolder + File.separator + moduleId + ".ccs");
             if (!file.exists())
                 FileValidationUtils.quickWrite(file, pretext);
-            mc.setScreen(new ClickScriptIDE(file));
+            mc.setScreenAndShow(new ClickScriptIDE(file));
         }
 
         @Override
@@ -400,7 +400,7 @@ public class ScriptsBrowsingScreen extends BrowsingScreen {
 
         @Override
         public void onClick(double mouseX, double mouseY, int button) {
-            if (mc.screen instanceof GuiScreen screen && button == 0) {
+            if (mc.gui.screen() instanceof GuiScreen screen && button == 0) {
                 textField.setDefaultText("§c*Enter module name*");
                 screen.selected = textField;
             }

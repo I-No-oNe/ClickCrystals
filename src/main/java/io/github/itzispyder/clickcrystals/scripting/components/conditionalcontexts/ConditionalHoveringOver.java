@@ -22,7 +22,7 @@ public class ConditionalHoveringOver implements Conditional, Global {
     public ConditionEvaluationResult evaluate(ConditionEvaluationContext ctx) {
         LocalPlayer p = PlayerUtils.player();
         Predicate<ItemStack> item = ScriptParser.parseItemPredicate(ctx.get(0).toString());
-        if (p == null || p.containerMenu == null || !(mc.screen instanceof AbstractContainerScreen<?> handle))
+        if (p == null || p.containerMenu == null || !(mc.gui.screen() instanceof AbstractContainerScreen<?> handle))
             return ctx.end(false);
 
         AccessorHandledScreen screen = (AccessorHandledScreen) handle;

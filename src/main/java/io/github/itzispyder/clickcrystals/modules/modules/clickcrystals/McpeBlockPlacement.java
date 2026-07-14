@@ -6,6 +6,7 @@ import io.github.itzispyder.clickcrystals.modrinth.ModrinthNoNo;
 import io.github.itzispyder.clickcrystals.modules.Categories;
 import io.github.itzispyder.clickcrystals.modules.modules.ListenerModule;
 import io.github.itzispyder.clickcrystals.util.minecraft.PlayerUtils;
+import io.github.itzispyder.clickcrystals.util.minecraft.VectorParser;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -56,9 +57,11 @@ public class McpeBlockPlacement extends ListenerModule {
         Direction dir = p.getMotionDirection();
         BlockPos foot = p.blockPosition().offset(0, -1, 0);
         BlockPos target = this.getDirectionalFootBlock(dir, p.blockPosition());
+        Vec3 footCenter = VectorParser.getCenter(foot);
+        Vec3 targetCenter = VectorParser.getCenter(target);
         Level world = p.level();
 
-        if (target.getCenter().distanceTo(foot.getCenter()) > 1.1) // can't place diagonally with a 10% error range
+        if (targetCenter.distanceTo(footCenter) > 1.1) // can't place diagonally with a 10% error range
             return null;
         if (world.getBlockState(foot).isAir())
             target = foot;
@@ -67,7 +70,7 @@ public class McpeBlockPlacement extends ListenerModule {
         if (!raycastHit(p.getEyePosition(), p.getForward(), target, 2, 0.1))
             return null;
 
-        return new BlockHitResult(target.getCenter(), dir.getOpposite(), target, false);
+        return new BlockHitResult(targetCenter, dir.getOpposite(), target, false);
     }
 
     private boolean raycastHit(Vec3 start, Vec3 dir, BlockPos target, double len, double step) {
@@ -81,7 +84,7 @@ public class McpeBlockPlacement extends ListenerModule {
     }
 
     private BlockPos getDirectionalFootBlock(Direction dir, BlockPos clientPos) {
-        return BlockPos.containing(clientPos.getCenter()
+        return BlockPos.containing(VectorParser.getCenter(clientPos)
                 .add(0, -1, 0)
                 .add(dir.getUnitVec3()));
     }

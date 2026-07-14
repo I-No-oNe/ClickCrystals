@@ -67,7 +67,7 @@ public class Keybind implements Global {
     }
 
     public void onPress() {
-        if (bindCondition.meets(this, mc.screen)) {
+        if (bindCondition.meets(this, mc.gui.screen())) {
             keyAction.onKey(this);
         }
     }

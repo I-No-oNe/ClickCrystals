@@ -30,7 +30,7 @@ public class SearchResultsElement extends GuiElement {
 
     @Override
     public void onRender(GuiGraphicsExtractor context, int mouseX, int mouseY) {
-        if (mc.screen instanceof GuiScreen screen && screen.selected != searchbar) {
+        if (mc.gui.screen() instanceof GuiScreen screen && screen.selected != searchbar) {
             this.setRendering(false);
             return;
         }
@@ -56,7 +56,7 @@ public class SearchResultsElement extends GuiElement {
         this.searchResults.clear();
         this.setDimensions(searchbar.getDimensions());
 
-        if (mc.screen instanceof GuiScreen screen) {
+        if (mc.gui.screen() instanceof GuiScreen screen) {
             this.setRendering(screen.selected == searchbar);
         }
 
@@ -120,7 +120,7 @@ public class SearchResultsElement extends GuiElement {
         @Override
         public void mouseClicked(double mouseX, double mouseY, int button) {
             if (isHovered((int)mouseX, (int)mouseY)) {
-                mc.setScreen(new ModuleEditScreen(module));
+                mc.setScreenAndShow(new ModuleEditScreen(module));
             }
             super.mouseClicked(mouseX, mouseY, button);
         }

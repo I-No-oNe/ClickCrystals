@@ -55,7 +55,7 @@ public abstract class GuiScreen extends Screen implements Global {
     }
 
     public static boolean matchCurrent(Class<? extends GuiScreen> type) {
-        return mc.screen != null && mc.screen.getClass() == type;
+        return mc.gui.screen() != null && mc.gui.screen().getClass() == type;
     }
 
     public abstract void baseRender(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta);

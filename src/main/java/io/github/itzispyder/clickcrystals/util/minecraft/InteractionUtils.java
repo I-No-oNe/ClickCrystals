@@ -96,11 +96,11 @@ public final class InteractionUtils implements Global {
 
     public static void toggleInventory(boolean toggle) {
         if (toggle) {
-            if (mc.screen == null)
-                mc.execute(() -> mc.setScreen(new InventoryScreen(PlayerUtils.player())));
+            if (mc.gui.screen() == null)
+                mc.execute(() -> mc.setScreenAndShow(new InventoryScreen(PlayerUtils.player())));
         }
         else {
-            if (mc.screen instanceof InventoryScreen inv)
+            if (mc.gui.screen() instanceof InventoryScreen inv)
                 mc.execute(inv::onClose);
         }
     }
@@ -121,11 +121,11 @@ public final class InteractionUtils implements Global {
             return;
         }
 
-        if (mc.screen instanceof InventoryScreen inv) {
+        if (mc.gui.screen() instanceof InventoryScreen inv) {
             mc.execute(inv::onClose);
         }
         else {
-            mc.execute(() -> mc.setScreen(new InventoryScreen(PlayerUtils.player())));
+            mc.execute(() -> mc.setScreenAndShow(new InventoryScreen(PlayerUtils.player())));
         }
     }
 

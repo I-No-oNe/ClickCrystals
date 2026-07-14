@@ -36,7 +36,7 @@ public abstract class MixinLevelRenderer implements Global {
     public void render(GraphicsResourceAllocator resourceAllocator, DeltaTracker deltaTracker, boolean renderOutline, CameraRenderState cameraState, Matrix4fc modelViewMatrix, GpuBufferSlice terrainFog, Vector4f fogColor, boolean shouldRenderSky, ChunkSectionsToRender chunkSectionsToRender, CallbackInfo ci) {
         Matrix4f positionMatrix = new Matrix4f(modelViewMatrix);
         Matrix4f projectionMatrix = new Matrix4f();
-        mc.gameRenderer.getMainCamera().getViewRotationProjectionMatrix(projectionMatrix);
+        mc.gameRenderer.mainCamera().getViewRotationProjectionMatrix(projectionMatrix);
 
         RenderWorldEvent event = new RenderWorldEvent(mc.gameRenderer, positionMatrix, projectionMatrix, deltaTracker);
         system.eventBus.pass(event);

@@ -70,8 +70,8 @@ public class MouseTaper extends ListenerModule {
     @Override
     protected void onEnable() {
         super.onEnable();
-        if (mc.screen != null)
-            mc.screen.onClose();
+        if (mc.gui.screen() != null)
+            mc.gui.screen().onClose();
 
         // checks (disable module if fail)
         Mode mode = this.mode.getVal();
@@ -108,8 +108,8 @@ public class MouseTaper extends ListenerModule {
             targetPos = null;
             system.cameraRotator.unlockCursor();
 
-            if (reopenOnDisable.getVal() && mc.screen == null) {
-                mc.setScreen(new ModuleEditScreen(this));
+            if (reopenOnDisable.getVal() && mc.gui.screen() == null) {
+                mc.setScreenAndShow(new ModuleEditScreen(this));
             }
         }
     }

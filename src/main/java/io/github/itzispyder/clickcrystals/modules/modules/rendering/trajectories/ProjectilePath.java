@@ -40,7 +40,7 @@ public class ProjectilePath implements Global {
         LocalPlayer shooter = PlayerUtils.player();
         ClientLevel world = PlayerUtils.getClientWorld();
         double velocity = maxVelocity * useDelta;
-        Camera cam = mc.gameRenderer.getMainCamera();
+        Camera cam = mc.gameRenderer.mainCamera();
         float pitch = (float)MathUtils.lerp(shooter.xBob, shooter.getXRot(), tickDelta);
         float yaw = (float)MathUtils.lerp(shooter.yBob, shooter.getYRot(), tickDelta);
         boolean firstPerson = mc.options.getCameraType().isFirstPerson();

@@ -12,7 +12,7 @@ import io.github.itzispyder.clickcrystals.modules.modules.ListenerModule;
 import io.github.itzispyder.clickcrystals.modules.settings.SettingSection;
 import io.github.itzispyder.clickcrystals.util.MathUtils;
 import io.github.itzispyder.clickcrystals.util.minecraft.PlayerUtils;
-import io.github.itzispyder.clickcrystals.util.minecraft.render.ClickCrystalsRenderLayers;
+import io.github.itzispyder.clickcrystals.util.minecraft.render.RenderLayers;
 import io.github.itzispyder.clickcrystals.util.minecraft.render.RenderUtils;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.core.BlockPos;
@@ -80,7 +80,7 @@ public class ElytraShadow extends ListenerModule {
                 buf.addVertex(mat, (float) pnt4.x, (float) pnt4.y, (float) pnt4.z).setColor(color.getHexCustomAlpha(r / rad));
             }
         }
-        RenderUtils.drawBuffer(buf, ClickCrystalsRenderLayers.QUADS);
+        RenderUtils.drawBuffer(buf, RenderLayers.QUADS);
     }
 
     private Vec3 castShadowVertex(Vec3 pnt) {

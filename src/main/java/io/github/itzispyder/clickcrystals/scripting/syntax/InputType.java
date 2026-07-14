@@ -28,8 +28,8 @@ public enum InputType implements Global {
     LEFT(InteractionUtils::leftClick, null, mc.mouseHandler::isLeftPressed, ((AccessorMouseHandler) mc.mouseHandler)::clickCrystals$toggleLeft),
     RIGHT(InteractionUtils::rightClick, null, mc.mouseHandler::isRightPressed, ((AccessorMouseHandler) mc.mouseHandler)::clickCrystals$toggleRight),
     MIDDLE(InteractionUtils::middleClick, null, mc.mouseHandler::isMiddlePressed, ((AccessorMouseHandler) mc.mouseHandler)::clickCrystals$toggleMiddle),
-    CONTAINER(InteractionUtils::inputInventory, null, () -> mc.screen instanceof AbstractContainerScreen<?>, InteractionUtils::toggleInventory),
-    INVENTORY(InteractionUtils::inputInventory, null, () -> mc.screen instanceof InventoryScreen || mc.screen instanceof CreativeModeInventoryScreen, InteractionUtils::toggleInventory),
+    CONTAINER(InteractionUtils::inputInventory, null, () -> mc.gui.screen() instanceof AbstractContainerScreen<?>, InteractionUtils::toggleInventory),
+    INVENTORY(InteractionUtils::inputInventory, null, () -> mc.gui.screen() instanceof InventoryScreen || mc.gui.screen() instanceof CreativeModeInventoryScreen, InteractionUtils::toggleInventory),
     MOUSE_WHEEL_UP(() -> InteractionUtils.mouseScroll(1), null, () -> false, _ -> {}),
     MOUSE_WHEEL_DOWN(() -> InteractionUtils.mouseScroll(-1), null, () -> false, _ -> {}),
     KEY(null, null, null, null);

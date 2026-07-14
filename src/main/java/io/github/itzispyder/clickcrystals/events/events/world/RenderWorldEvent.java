@@ -48,7 +48,7 @@ public class RenderWorldEvent extends Event {
     }
 
     public Camera getCamera() {
-        return renderer.getMainCamera();
+        return renderer.mainCamera();
     }
 
     public LocalPlayer getPlayer() {

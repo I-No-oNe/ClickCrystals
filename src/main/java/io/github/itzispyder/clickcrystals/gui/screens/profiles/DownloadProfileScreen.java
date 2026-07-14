@@ -49,7 +49,7 @@ public class DownloadProfileScreen extends AnimatedBase {
                     fillRoundRect(context, b.x, b.y, b.width, b.height, r, c1);
                     drawCenteredText(context, "<- Go Back", b.x + b.width / 2, b.y + (b.height - 7) / 2, false);
                 })
-                .onPress(button -> mc.execute(() -> mc.setScreen(new ProfilesScreen())))
+                .onPress(button -> mc.execute(() -> mc.setScreenAndShow(new ProfilesScreen())))
                 .build()
         );
 

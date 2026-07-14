@@ -24,7 +24,7 @@ public class ColorWheelElement extends GuiElement {
         this.addChild(this.sliderBrightness);
         this.addChild(this.sliderAlpha);
         this.hoverAnimator = new PollingAnimator(200, () -> {
-            return mc.screen instanceof GuiScreen screen
+            return mc.gui.screen() instanceof GuiScreen screen
                     && (screen.selected == this || screen.selected == sliderBrightness || screen.selected == sliderAlpha);
         }, Animations.ELASTIC_BOUNCE);
     }
@@ -35,7 +35,7 @@ public class ColorWheelElement extends GuiElement {
         int r = width / 2;
         int cx = x + r;
         int cy = y + r;
-        if (mc.screen instanceof GuiScreen screen && screen.selected == this) {
+        if (mc.gui.screen() instanceof GuiScreen screen && screen.selected == this) {
             curX = mouseX - cx;
             curY = mouseY - cy;
             clampCursor();
@@ -163,7 +163,7 @@ public class ColorWheelElement extends GuiElement {
 
     @Override
     public void mouseClicked(double mouseX, double mouseY, int button) {
-        if (mc.screen instanceof GuiScreen screen && isHovered((int)mouseX, (int)mouseY)) {
+        if (mc.gui.screen() instanceof GuiScreen screen && isHovered((int)mouseX, (int)mouseY)) {
             screen.selected = this;
         }
         super.mouseClicked(mouseX, mouseY, button);
@@ -185,7 +185,7 @@ public class ColorWheelElement extends GuiElement {
         @Override
         public void onRender(GuiGraphicsExtractor context, int mouseX, int mouseY) {
             // pre render tasks
-            if (mc.screen instanceof GuiScreen screen && screen.selected == this) {
+            if (mc.gui.screen() instanceof GuiScreen screen && screen.selected == this) {
                 fillEnd = mouseX;
                 clampCursor();
             }
@@ -213,7 +213,7 @@ public class ColorWheelElement extends GuiElement {
 
         @Override
         public void mouseClicked(double mouseX, double mouseY, int button) {
-            if (mc.screen instanceof GuiScreen screen && isHovered((int)mouseX, (int)mouseY)) {
+            if (mc.gui.screen() instanceof GuiScreen screen && isHovered((int)mouseX, (int)mouseY)) {
                 screen.selected = this;
             }
             super.mouseClicked(mouseX, mouseY, button);

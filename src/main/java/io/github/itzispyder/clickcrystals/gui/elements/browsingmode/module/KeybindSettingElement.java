@@ -32,7 +32,7 @@ public class KeybindSettingElement extends SettingElement<KeybindSetting> implem
         int drawX = x + width - drawW - 5;
         int drawY = y + height / 2 - 2;
 
-        if (mc.screen instanceof GuiScreen screen) {
+        if (mc.gui.screen() instanceof GuiScreen screen) {
             int fill = screen.selected == this ? Shades.LIGHT_GRAY : Shades.GRAY;
             RenderUtils.fillRoundRect(context, drawX, drawY, drawW, drawH, 3, fill);
 
@@ -45,7 +45,7 @@ public class KeybindSettingElement extends SettingElement<KeybindSetting> implem
 
     @Override
     public void mouseClicked(double mouseX, double mouseY, int button) {
-        if (mc.screen instanceof GuiScreen screen && isHovered((int)mouseX, (int)mouseY)) {
+        if (mc.gui.screen() instanceof GuiScreen screen && isHovered((int)mouseX, (int)mouseY)) {
             screen.selected = this;
         }
         super.mouseClicked(mouseX, mouseY, button);
@@ -53,7 +53,7 @@ public class KeybindSettingElement extends SettingElement<KeybindSetting> implem
 
     @Override
     public boolean onKey(int key, int scanCode) {
-        if (mc.screen instanceof GuiScreen screen) {
+        if (mc.gui.screen() instanceof GuiScreen screen) {
             setting.setKey(key == GLFW.GLFW_KEY_ESCAPE ? Keybind.NONE : key);
             currentScanCode = scanCode;
             screen.selected = null;

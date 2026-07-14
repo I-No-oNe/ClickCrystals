@@ -51,6 +51,6 @@ public class BulletinScreen extends DefaultBase {
 
     @Override
     public void resize(int width, int height) {
-        minecraft.setScreen(new BulletinScreen());
+        minecraft.setScreenAndShow(new BulletinScreen());
     }
 }

@@ -43,7 +43,7 @@ public class DiscordInviteScreen extends GuiScreen {
                 }).build();
 
         decline = AbstractElement.create().dimensions(baseWidth / 4, 12)
-                .onPress(button -> mc.setScreen(new HomeScreen()))
+                .onPress(button -> mc.setScreenAndShow(new HomeScreen()))
                 .onRender((context, mouseX, mouseY, button) -> {
                     int fill = button.isHovered(mouseX, mouseY) ? Shades.GRAY : Shades.DARK_GRAY;
                     fillRoundHoriLine(context, button.x, button.y, baseWidth / 4, 12, fill);
@@ -94,6 +94,6 @@ public class DiscordInviteScreen extends GuiScreen {
 
     @Override
     public void resize(int width, int height) {
-        minecraft.setScreen(new DiscordInviteScreen());
+        minecraft.setScreenAndShow(new DiscordInviteScreen());
     }
 }

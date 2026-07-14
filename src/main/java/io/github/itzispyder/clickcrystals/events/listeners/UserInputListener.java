@@ -99,12 +99,12 @@ public class UserInputListener implements Listener {
     }
 
     public static void scheduleOpenScreen(GuiScreen screen) {
-        if (screen instanceof AnimatedBase base && mc.screen == null) {
+        if (screen instanceof AnimatedBase base && mc.gui.screen() == null) {
             boolean bl = PlayerUtils.valid();
             base.setPlayOpenAnimation(bl);
             base.setPlayCloseAnimation(bl);
         }
-        mc.execute(() -> mc.setScreen(screen));
+        mc.execute(() -> mc.setScreenAndShow(screen));
     }
 
     @EventHandler
@@ -138,7 +138,7 @@ public class UserInputListener implements Listener {
 
     private void handleScreenManagement(SetScreenEvent e) {
         if (e.getScreen() instanceof BrowsingScreen && PlayerUtils.valid() && config.isOverviewMode()) {
-            mc.setScreen(new OverviewScreen());
+            mc.setScreenAndShow(new OverviewScreen());
             return;
         }
         if (e.getScreen() == null && isScreenTracked(e.getPreviousScreen())) {

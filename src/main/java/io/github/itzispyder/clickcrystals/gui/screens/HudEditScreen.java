@@ -72,7 +72,7 @@ public class HudEditScreen extends GuiScreen {
 
     @Override
     public void resize(int width, int height) {
-        minecraft.setScreen(new HudEditScreen());
+        minecraft.setScreenAndShow(new HudEditScreen());
     }
 
     @Override

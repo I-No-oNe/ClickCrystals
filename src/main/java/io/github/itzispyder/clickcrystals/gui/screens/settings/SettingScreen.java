@@ -58,7 +58,7 @@ public class SettingScreen extends DefaultBase {
 
     @Override
     public void resize(int width, int height) {
-        minecraft.setScreen(new SettingScreen());
+        minecraft.setScreenAndShow(new SettingScreen());
     }
 
     @Override
@@ -104,7 +104,7 @@ public class SettingScreen extends DefaultBase {
 
     public static class ScreenShortcut extends ShortCut {
         public ScreenShortcut(String title, String details, int x, int y, Screen destination, BooleanSupplier check) {
-            super(title, details, x, y, () -> mc.execute(() -> mc.setScreen(destination)), check);
+            super(title, details, x, y, () -> mc.execute(() -> mc.setScreenAndShow(destination)), check);
         }
     }
 

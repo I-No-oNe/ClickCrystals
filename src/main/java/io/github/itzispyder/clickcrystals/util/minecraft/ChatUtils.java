@@ -1,6 +1,7 @@
 package io.github.itzispyder.clickcrystals.util.minecraft;
 
 import io.github.itzispyder.clickcrystals.Global;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.SoundManager;
@@ -87,5 +88,9 @@ public final class ChatUtils implements Global {
         pendingClickAction = null;
 
         if (action != null) action.run();
+    }
+
+    public static char getFormattingChar(ChatFormatting formatting) {
+        return formatting.toString().charAt(1);
     }
 }

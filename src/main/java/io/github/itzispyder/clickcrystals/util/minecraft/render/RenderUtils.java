@@ -8,6 +8,7 @@ import io.github.itzispyder.clickcrystals.gui.misc.Color;
 import io.github.itzispyder.clickcrystals.util.minecraft.render.states.*;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.feature.CustomFeatureRenderer;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -19,7 +20,7 @@ public final class RenderUtils implements Global {
     // fill
 
     public static void fillRect(GuiGraphicsExtractor context, int x, int y, int w, int h, int color) {
-        context.guiRenderState.addGuiElement(new ClickCrystalsQuadState(context, x, y, w, h, color));
+        context.guiRenderState.addGuiElement(new QuadState(context, x, y, w, h, color));
     }
 
     public static void fillVeryUselessColorWheel(GuiGraphicsExtractor context, int x, int y, int r) {
@@ -31,7 +32,7 @@ public final class RenderUtils implements Global {
     }
 
     public static void fillVerticalGradient(GuiGraphicsExtractor context, int x, int y, int w, int h, int colorTop, int colorBottom) {
-        context.guiRenderState.addGuiElement(new ClickCrystalsQuadState(context, x, y, w, h, colorTop, colorTop, colorBottom, colorBottom));
+        context.guiRenderState.addGuiElement(new QuadState(context, x, y, w, h, colorTop, colorTop, colorBottom, colorBottom));
     }
 
     public static void fillCircle(GuiGraphicsExtractor context, int cX, int cY, int radius, int color) {
@@ -39,11 +40,11 @@ public final class RenderUtils implements Global {
     }
 
     public static void fillRoundRect(GuiGraphicsExtractor context, int x, int y, int w, int h, int r, int color) {
-        context.guiRenderState.addGuiElement(new ClickCrystalsRoundRectState(context, x, y, w, h, r, color));
+        context.guiRenderState.addGuiElement(new RoundRectState(context, x, y, w, h, r, color));
     }
 
     public static void fillRoundRectGradient(GuiGraphicsExtractor context, int x, int y, int w, int h, int r, int color1, int color2, int color3, int color4, int colorCenter) {
-        context.guiRenderState.addGuiElement(new ClickCrystalsRoundRectState(context, x, y, w, h, r, color1, color2, color3, color4, colorCenter));
+        context.guiRenderState.addGuiElement(new RoundRectState(context, x, y, w, h, r, color1, color2, color3, color4, colorCenter));
     }
 
     public static void fillRoundShadow(GuiGraphicsExtractor context, int x, int y, int w, int h, int r, float thickness, int innerColor, int outerColor) {
@@ -51,7 +52,7 @@ public final class RenderUtils implements Global {
     }
 
     public static void fillRoundShadowGradient(GuiGraphicsExtractor context, int x, int y, int w, int h, int r, float thickness, int inner1, int outer1, int inner2, int outer2, int inner3, int outer3, int inner4, int outer4) {
-        context.guiRenderState.addGuiElement(new ClickCrystalsRoundRectWireframeState(context, x, y, w, h, r, thickness, inner1, outer1, inner2, outer2, inner3, outer3, inner4, outer4));
+        context.guiRenderState.addGuiElement(new RoundRectWireframeState(context, x, y, w, h, r, thickness, inner1, outer1, inner2, outer2, inner3, outer3, inner4, outer4));
     }
 
     public static void fillRoundShadow(GuiGraphicsExtractor context, int x, int y, int w, int h, int r, float thickness, int color) {
@@ -209,7 +210,7 @@ public final class RenderUtils implements Global {
     }
 
     public static void drawRoundTexture(GuiGraphicsExtractor context, Identifier texture, int x, int y, int w, int h, int r) {
-        context.guiRenderState.addGuiElement(new ClickCrystalsRoundRectTexState(context, texture, x, y, w, h, r));
+        context.guiRenderState.addGuiElement(new RoundRectTexState(context, texture, x, y, w, h, r));
     }
 
     public static void drawItem(GuiGraphicsExtractor context, ItemStack item, int x, int y, float scale) {
@@ -246,6 +247,7 @@ public final class RenderUtils implements Global {
     }
 
     public static BufferBuilder getBuffer(VertexFormat.Mode drawMode, VertexFormat format) {
+        CustomFeatureRenderer renderer = new CustomFeatureRenderer();
         return Tesselator.getInstance().begin(drawMode, format);
     }
 

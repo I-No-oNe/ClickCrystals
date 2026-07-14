@@ -48,7 +48,7 @@ public class TurnToCmd extends ScriptCommand {
         switch (read.next(TargetType.class)) {
             case NEAREST_BLOCK -> {
                 Predicate<BlockState> filter = ScriptParser.parseBlockPredicate(read.nextStr());
-                PlayerUtils.runOnNearestBlock(32, filter, (pos, state) -> turn(pos.getCenter(), eyes, args));
+                PlayerUtils.runOnNearestBlock(32, filter, (pos, state) -> turn(VectorParser.getCenter(pos), eyes, args));
             }
             case NEAREST_ENTITY -> {
                 Predicate<Entity> filter = ScriptParser.parseEntityPredicate(read.nextStr());
@@ -58,7 +58,7 @@ public class TurnToCmd extends ScriptCommand {
                 });
             }
 
-            case ANY_BLOCK -> PlayerUtils.runOnNearestBlock(32, (pos, state) -> true, (pos, state) -> turn(pos.getCenter(), eyes, args));
+            case ANY_BLOCK -> PlayerUtils.runOnNearestBlock(32, (pos, state) -> true, (pos, state) -> turn(VectorParser.getCenter(pos), eyes, args));
             case ANY_ENTITY -> PlayerUtils.runOnNearestEntity(128, Entity::isAlive, entity -> {
                 if (!(entity instanceof Player) || !EntityUtils.isTeammate(((Player) entity)))
                     turn(entity.position(), eyes, args);

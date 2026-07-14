@@ -12,6 +12,7 @@ import io.github.itzispyder.clickcrystals.modules.Module;
 import io.github.itzispyder.clickcrystals.modules.ModuleSetting;
 import io.github.itzispyder.clickcrystals.modules.settings.SettingSection;
 import io.github.itzispyder.clickcrystals.util.minecraft.PlayerUtils;
+import io.github.itzispyder.clickcrystals.util.minecraft.VectorParser;
 import io.github.itzispyder.clickcrystals.util.misc.Raytracer;
 import io.github.itzispyder.clickcrystals.util.misc.camera.CameraFinalizerCallback;
 import net.minecraft.client.player.LocalPlayer;
@@ -170,7 +171,7 @@ public class NextBlock extends Module implements Listener {
         double max = p.blockInteractionRange();
 
         PlayerUtils.boxIterator(w, box, (pos, state) -> {
-            Vec3 posVec = pos.getCenter();
+            Vec3 posVec = VectorParser.getCenter(pos);
             double dist = posVec.distanceTo(p.getEyePosition());
 
             if (dist > max) {
@@ -197,7 +198,7 @@ public class NextBlock extends Module implements Listener {
     }
 
     public Vec3 getNearestToTarget(BlockPos pos) {
-        Vec3 start = pos.getCenter();
+        Vec3 start = VectorParser.getCenter(pos);
         LocalPlayer p = PlayerUtils.player();
         Level w = PlayerUtils.getWorld();
         AABB box = new AABB(pos).inflate(5);
@@ -206,7 +207,7 @@ public class NextBlock extends Module implements Listener {
         double max = PlayerUtils.player().blockInteractionRange();
 
         PlayerUtils.boxIterator(w, box, (blockPos, state) -> {
-            Vec3 posVec = blockPos.getCenter();
+            Vec3 posVec = VectorParser.getCenter(blockPos);
             double dist = posVec.distanceTo(start);
             double reach = posVec.distanceTo(p.getEyePosition());
 

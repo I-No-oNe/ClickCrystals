@@ -8,7 +8,6 @@ import io.github.itzispyder.clickcrystals.scripting.syntax.ThenChainable;
 import io.github.itzispyder.clickcrystals.util.minecraft.EntityUtils;
 import io.github.itzispyder.clickcrystals.util.minecraft.PlayerUtils;
 import io.github.itzispyder.clickcrystals.util.minecraft.VectorParser;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
@@ -61,18 +60,18 @@ public class InteractCmd extends ScriptCommand implements ThenChainable {
             case NEAREST_BLOCK -> {
                 Predicate<BlockState> filter = ScriptParser.parseBlockPredicate(read.nextStr());
                 PlayerUtils.runOnNearestBlock(32, filter, (pos, state) -> {
-                    Vec3 vector = PlayerUtils.getEyes().subtract(pos.getCenter());
+                    Vec3 vector = PlayerUtils.getEyes().subtract(VectorParser.getCenter(pos));
                     Direction face = Direction.getApproximateNearest(vector);
-                    BlockHitResult hit = new BlockHitResult(pos.getCenter(), face, pos, false);
+                    BlockHitResult hit = new BlockHitResult(VectorParser.getCenter(pos), face, pos, false);
                     mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hit);
                 });
                 read.executeThenChain();
             }
             case ANY_BLOCK -> {
                 PlayerUtils.runOnNearestBlock(32, (pos, state) -> true, (pos, state) -> {
-                    Vec3 vector = PlayerUtils.getEyes().subtract(pos.getCenter());
+                    Vec3 vector = PlayerUtils.getEyes().subtract(VectorParser.getCenter(pos));
                     Direction face = Direction.getApproximateNearest(vector);
-                    BlockHitResult hit = new BlockHitResult(pos.getCenter(), face, pos, false);
+                    BlockHitResult hit = new BlockHitResult(VectorParser.getCenter(pos), face, pos, false);
                     mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hit);
                 });
                 read.executeThenChain();
@@ -84,10 +83,9 @@ public class InteractCmd extends ScriptCommand implements ThenChainable {
                         read.nextStr(),
                         PlayerUtils.player()
                 );
-                BlockPos pos = BlockPos.containing(parser.getVector());
-                Vec3 vector = PlayerUtils.getEyes().subtract(pos.getCenter());
+                Vec3 vector = PlayerUtils.getEyes().subtract(parser.getBlockCenter());
                 Direction face = Direction.getApproximateNearest(vector);
-                BlockHitResult hit = new BlockHitResult(pos.getCenter(), face, pos, false);
+                BlockHitResult hit = new BlockHitResult(parser.getBlockCenter(), face, parser.getBlockPos(), false);
                 mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hit);
                 read.executeThenChain();
             }

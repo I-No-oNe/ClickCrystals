@@ -49,7 +49,7 @@ public class ProfilesScreen extends DefaultBase {
 
     @Override
     public void resize(int width, int height) {
-        minecraft.setScreen(new ProfilesScreen());
+        minecraft.setScreenAndShow(new ProfilesScreen());
     }
 
     private static class ProfileSelect extends ModuleElement {
@@ -107,7 +107,7 @@ public class ProfilesScreen extends DefaultBase {
             else {
                 while (system.profiles.hasProfile(profileId))
                     system.profiles.deleteProfile(profileId);
-                mc.setScreen(new ProfilesScreen());
+                mc.setScreenAndShow(new ProfilesScreen());
             }
             super.mouseClicked(mouseX, mouseY, button);
         }
@@ -123,7 +123,7 @@ public class ProfilesScreen extends DefaultBase {
             public boolean onKey(int key, int scancode) {
                 if (key != GLFW.GLFW_KEY_ENTER)
                     return super.onKey(key, scancode);
-                if (!(mc.screen instanceof GuiScreen screen))
+                if (!(mc.gui.screen() instanceof GuiScreen screen))
                     return true;
 
                 if (getQuery().isEmpty()) {
@@ -135,7 +135,7 @@ public class ProfilesScreen extends DefaultBase {
                             .replace(' ', '-')
                             .replaceAll("[^a-z_-]", "");
                     system.profiles.switchProfile(name);
-                    mc.setScreen(new ProfilesScreen());
+                    mc.setScreenAndShow(new ProfilesScreen());
                 }
                 return true;
             }
@@ -162,7 +162,7 @@ public class ProfilesScreen extends DefaultBase {
 
         @Override
         public void mouseClicked(double mouseX, double mouseY, int button) {
-            if (mc.screen instanceof GuiScreen screen && isHovered((int)mouseX, (int)mouseY)) {
+            if (mc.gui.screen() instanceof GuiScreen screen && isHovered((int)mouseX, (int)mouseY)) {
                 textField.setDefaultText("§c*Enter profile name*");
                 screen.selected = textField;
             }
@@ -190,7 +190,7 @@ public class ProfilesScreen extends DefaultBase {
         @Override
         public void mouseClicked(double mouseX, double mouseY, int button) {
             if (isHovered((int)mouseX, (int)mouseY)) {
-                mc.setScreen(new DownloadProfileScreen());
+                mc.setScreenAndShow(new DownloadProfileScreen());
             }
             super.mouseClicked(mouseX, mouseY, button);
         }

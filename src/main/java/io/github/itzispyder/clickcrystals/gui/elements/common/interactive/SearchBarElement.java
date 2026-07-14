@@ -34,7 +34,7 @@ public class SearchBarElement extends GuiElement implements Typeable {
     public void onRender(GuiGraphicsExtractor context, int mouseX, int mouseY) {
         RenderUtils.fillRoundHoriLine(context, x, y, width, height, Shades.LIGHT);
 
-        if (!(mc.screen instanceof GuiScreen screen))
+        if (!(mc.gui.screen() instanceof GuiScreen screen))
             return;
         if (screen.selected == this)
             RenderUtils.fillRoundShadow(context, x, y, width, height, height / 2, 3, 0x80FFFFFF, 0x00FFFFFF);
@@ -60,7 +60,7 @@ public class SearchBarElement extends GuiElement implements Typeable {
 
     @Override
     public void mouseClicked(double mouseX, double mouseY, int button) {
-        if (mc.screen instanceof GuiScreen screen && isHovered((int)mouseX, (int)mouseY)) {
+        if (mc.gui.screen() instanceof GuiScreen screen && isHovered((int)mouseX, (int)mouseY)) {
             screen.selected = this;
         }
         super.mouseClicked(mouseX, mouseY, button);
@@ -83,7 +83,7 @@ public class SearchBarElement extends GuiElement implements Typeable {
     public void onTick() {
         super.onTick();
 
-        if (mc.screen instanceof GuiScreen screen) {
+        if (mc.gui.screen() instanceof GuiScreen screen) {
             if (screen.selected != this) {
                 selectionBlinking = false;
                 return;

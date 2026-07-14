@@ -60,7 +60,7 @@ public class DamageCmd extends ScriptCommand implements ThenChainable {
             case NEAREST_BLOCK -> {
                 Predicate<BlockState> filter = ScriptParser.parseBlockPredicate(read.nextStr());
                 PlayerUtils.runOnNearestBlock(32, filter, (pos, state) -> {
-                    Vec3 vector = PlayerUtils.getEyes().subtract(pos.getCenter());
+                    Vec3 vector = PlayerUtils.getEyes().subtract(VectorParser.getCenter(pos));
                     Direction face = Direction.getApproximateNearest(vector);
                     mc.gameMode.startDestroyBlock(pos, face);
                 });
@@ -68,7 +68,7 @@ public class DamageCmd extends ScriptCommand implements ThenChainable {
             }
             case ANY_BLOCK -> {
                 PlayerUtils.runOnNearestBlock(32, (pos, state) -> true, (pos, state) -> {
-                    Vec3 vector = PlayerUtils.getEyes().subtract(pos.getCenter());
+                    Vec3 vector = PlayerUtils.getEyes().subtract(VectorParser.getCenter(pos));
                     Direction face = Direction.getApproximateNearest(vector);
                     mc.gameMode.startDestroyBlock(pos, face);
                 });
@@ -82,7 +82,7 @@ public class DamageCmd extends ScriptCommand implements ThenChainable {
                         PlayerUtils.player()
                 );
                 BlockPos pos = BlockPos.containing(parser.getVector());
-                Vec3 vector = PlayerUtils.getEyes().subtract(pos.getCenter());
+                Vec3 vector = PlayerUtils.getEyes().subtract(VectorParser.getCenter(pos));
                 Direction face = Direction.getApproximateNearest(vector);
                 mc.gameMode.startDestroyBlock(pos, face);
                 read.executeThenChain();

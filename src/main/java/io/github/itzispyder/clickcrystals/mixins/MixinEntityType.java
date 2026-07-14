@@ -8,11 +8,11 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(EntityType.class)
+@Mixin(EntityTypes.class)
 public abstract class MixinEntityType {
 
     @Inject(method = "Lnet/minecraft/world/entity/EntityType;register(Ljava/lang/String;Lnet/minecraft/world/entity/EntityType$Builder;)Lnet/minecraft/world/entity/EntityType;", at = @At("RETURN"))
-    private static <T extends Entity> void register(String vanillaId, EntityType.Builder<T> builder, CallbackInfoReturnable<EntityType<T>> cir) {
+    private static <T extends Entity> void register(String vanillaId, EntityTypes.Builder<T> builder, CallbackInfoReturnable<EntityType<T>> cir) {
         MobHeadBrush.init(cir.getReturnValue(), vanillaId);
     }
 }

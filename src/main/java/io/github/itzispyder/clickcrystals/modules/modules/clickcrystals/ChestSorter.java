@@ -23,7 +23,7 @@ public class ChestSorter extends ListenerModule {
     @EventHandler
     private void onClick(MouseClickEvent e) {
         if (e.getButton() != 1 || !e.getAction().isRelease()) return;
-        if (!(mc.screen instanceof ContainerScreen container)) return;
+        if (!(mc.gui.screen() instanceof ContainerScreen container)) return;
 
         ChestMenu handler = container.getMenu();
         int chestSize = handler.getRowCount() * 9;

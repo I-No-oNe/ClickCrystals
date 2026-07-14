@@ -15,7 +15,6 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityEvent;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.component.FireworkExplosion;
@@ -99,7 +98,7 @@ public class DeathEffects extends ListenerModule {
     }
 
     private void spawnLightning(Entity ent) {
-        LightningBolt lightningEntity = new LightningBolt(EntityType.LIGHTNING_BOLT, mc.level);
+        LightningBolt lightningEntity = new LightningBolt(EntityTypes.LIGHTNING_BOLT, mc.level);
         lightningEntity.snapTo(ent.getX(), ent.getY(), ent.getZ());
         mc.level.addEntity(lightningEntity);
         lightningRender.put(ent, System.currentTimeMillis());

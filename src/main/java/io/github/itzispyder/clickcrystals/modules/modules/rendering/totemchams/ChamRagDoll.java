@@ -42,7 +42,7 @@ public abstract class ChamRagDoll<P extends ChamPart> implements Global {
     protected abstract void renderPart(P part, PoseStack matrices, int color, float tickDelta);
 
     public void render(PoseStack matrices, int color, float tickDelta) {
-        Vector3f c = new Vec3(x, y, z).subtract(mc.gameRenderer.getMainCamera().position()).toVector3f();
+        Vector3f c = new Vec3(x, y, z).subtract(mc.gameRenderer.mainCamera().position()).toVector3f();
         Quaternionf pitch = new Quaternionf().rotationX((float) Math.toRadians(glidingProgress == 1 ? this.pitch + 90 : glidingProgress * 90));
         Quaternionf yaw = new Quaternionf().rotationY((float) Math.toRadians(-this.yaw));
 

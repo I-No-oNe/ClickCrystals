@@ -228,7 +228,7 @@ public class TextFieldElement extends GuiElement implements Typeable {
 
     @Override
     public boolean onKey(int key, int scan) {
-        if (!(mc.screen instanceof GuiScreen screen)) return false;
+        if (!(mc.gui.screen() instanceof GuiScreen screen)) return false;
         if (keyInterceptor != null && keyInterceptor.apply(key)) return true;
         boolean handled = handleKeyInner(key, screen);
         if (handled && onStateChanged != null) onStateChanged.run();
@@ -624,7 +624,7 @@ public class TextFieldElement extends GuiElement implements Typeable {
     @Override
     public void onTick() {
         super.onTick();
-        if (mc.screen instanceof GuiScreen screen) {
+        if (mc.gui.screen() instanceof GuiScreen screen) {
             if (screen.selected != this) {
                 selectionBlinking = false;
                 return;

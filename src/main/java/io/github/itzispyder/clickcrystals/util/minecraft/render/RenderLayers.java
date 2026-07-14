@@ -11,7 +11,7 @@ import net.minecraft.resources.Identifier;
 
 import java.util.function.Function;
 
-public class ClickCrystalsRenderLayers {
+public class RenderLayers {
 
     public static final RenderType LINES;
     public static final RenderType LINES_STRIP;
@@ -41,16 +41,16 @@ public class ClickCrystalsRenderLayers {
     }
 
     static {
-        LINES = RenderType.create("cc_layer_lines", emptyParams(ClickCrystalsRenderPipelines.PIPELINE_LINES));
-        LINES_STRIP = RenderType.create("cc_layer_lines_strip", emptyParams(ClickCrystalsRenderPipelines.PIPELINE_LINES_STRIP));
-        QUADS = RenderType.create("cc_layer_quads", emptyParams(ClickCrystalsRenderPipelines.PIPELINE_QUADS));
-        TRI_FAN = RenderType.create("cc_layer_tri_fan", emptyParams(ClickCrystalsRenderPipelines.PIPELINE_TRI_FAN));
-        TRI_STRIP = RenderType.create("cc_layer_tri_strip", emptyParams(ClickCrystalsRenderPipelines.PIPELINE_TRI_STRIP));
-        TEX_QUADS = id -> RenderType.create("cc_layer_tex_quad", textureParams(ClickCrystalsRenderPipelines.PIPELINE_TEX_QUADS, id));
-        TEX_TRI_FAN = id -> RenderType.create("cc_layer_tex_tri_fan", textureParams(ClickCrystalsRenderPipelines.PIPELINE_TEX_TRI_FAN, id));
-        TRI_STRIP_CULL = RenderType.create("cc_layer_tri_strip_cull", emptyParams(ClickCrystalsRenderPipelines.PIPELINE_TRI_STRIP_CULL));
-        TRI_FAN_CULL = RenderType.create("cc_layer_tri_fan_cull", emptyParams(ClickCrystalsRenderPipelines.PIPELINE_TRI_FAN_CULL));
-        QUADS_CULL = RenderType.create("cc_layer_quads_cull", emptyParams(ClickCrystalsRenderPipelines.PIPELINE_QUADS_CULL));
-        LINES_CULL = RenderType.create("cc_layer_lines_cull", emptyParams(ClickCrystalsRenderPipelines.PIPELINE_LINES_CULL));
+        LINES = RenderType.create("cc_layer_lines", emptyParams(RenderPipelines.PIPELINE_LINES));
+        LINES_STRIP = RenderType.create("cc_layer_lines_strip", emptyParams(RenderPipelines.PIPELINE_LINES_STRIP));
+        QUADS = RenderType.create("cc_layer_quads", emptyParams(RenderPipelines.PIPELINE_QUADS));
+        TRI_FAN = RenderType.create("cc_layer_tri_fan", emptyParams(RenderPipelines.PIPELINE_TRI_FAN));
+        TRI_STRIP = RenderType.create("cc_layer_tri_strip", emptyParams(RenderPipelines.PIPELINE_TRI_STRIP));
+        TEX_QUADS = id -> RenderType.create("cc_layer_tex_quad", textureParams(RenderPipelines.PIPELINE_TEX_QUADS, id));
+        TEX_TRI_FAN = id -> RenderType.create("cc_layer_tex_tri_fan", textureParams(RenderPipelines.PIPELINE_TEX_TRI_FAN, id));
+        TRI_STRIP_CULL = RenderType.create("cc_layer_tri_strip_cull", emptyParams(RenderPipelines.PIPELINE_TRI_STRIP_CULL));
+        TRI_FAN_CULL = RenderType.create("cc_layer_tri_fan_cull", emptyParams(RenderPipelines.PIPELINE_TRI_FAN_CULL));
+        QUADS_CULL = RenderType.create("cc_layer_quads_cull", emptyParams(RenderPipelines.PIPELINE_QUADS_CULL));
+        LINES_CULL = RenderType.create("cc_layer_lines_cull", emptyParams(RenderPipelines.PIPELINE_LINES_CULL));
     }
 }

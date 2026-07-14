@@ -3,7 +3,7 @@ package io.github.itzispyder.clickcrystals.util.minecraft.render.states;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import io.github.itzispyder.clickcrystals.util.MathUtils;
-import io.github.itzispyder.clickcrystals.util.minecraft.render.ClickCrystalsRenderPipelines;
+import io.github.itzispyder.clickcrystals.util.minecraft.render.RenderPipelines;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.render.TextureSetup;
@@ -12,7 +12,7 @@ import net.minecraft.util.Mth;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix3x2f;
 
-public class ClickCrystalsRoundRectState implements GuiElementRenderState {
+public class RoundRectState implements GuiElementRenderState {
 
     private final RenderPipeline pipeline;
     private final TextureSetup texture;
@@ -21,7 +21,7 @@ public class ClickCrystalsRoundRectState implements GuiElementRenderState {
     public int color1, color2, color3, color4, colorCenter;
     private final ScreenRectangle scissor, bounds;
 
-    public ClickCrystalsRoundRectState(RenderPipeline pipeline, TextureSetup texture, Matrix3x2f pose, float x, float y, float w, float h, float r, int color1, int color2, int color3, int color4, int colorCenter, ScreenRectangle scissor, ScreenRectangle bounds) {
+    public RoundRectState(RenderPipeline pipeline, TextureSetup texture, Matrix3x2f pose, float x, float y, float w, float h, float r, int color1, int color2, int color3, int color4, int colorCenter, ScreenRectangle scissor, ScreenRectangle bounds) {
         this.pipeline = pipeline;
         this.texture = texture;
         this.pose = pose;
@@ -39,8 +39,8 @@ public class ClickCrystalsRoundRectState implements GuiElementRenderState {
         this.bounds = bounds;
     }
 
-    public ClickCrystalsRoundRectState(Matrix3x2f pose, float x, float y, float w, float h, float r, int color1, int color2, int color3, int color4, int colorCenter, ScreenRectangle scissor) {
-        this(ClickCrystalsRenderPipelines.PIPELINE_QUADS, TextureSetup.noTexture(), pose,
+    public RoundRectState(Matrix3x2f pose, float x, float y, float w, float h, float r, int color1, int color2, int color3, int color4, int colorCenter, ScreenRectangle scissor) {
+        this(RenderPipelines.PIPELINE_QUADS, TextureSetup.noTexture(), pose,
                 x, y, w, h, (float) MathUtils.clamp(r, 0, Math.min(w, h) / 2),
                 color1, color2, color3, color4, colorCenter,
                 scissor,
@@ -50,11 +50,11 @@ public class ClickCrystalsRoundRectState implements GuiElementRenderState {
                 ));
     }
 
-    public ClickCrystalsRoundRectState(GuiGraphicsExtractor context, float x, float y, float w, float h, float r, int color1, int color2, int color3, int color4, int colorCenter) {
+    public RoundRectState(GuiGraphicsExtractor context, float x, float y, float w, float h, float r, int color1, int color2, int color3, int color4, int colorCenter) {
         this(new Matrix3x2f(context.pose()), x, y, w, h, r, color1, color2, color3, color4, colorCenter, context.scissorStack.peek());
     }
 
-    public ClickCrystalsRoundRectState(GuiGraphicsExtractor context, float x, float y, float w, float h, float r, int color) {
+    public RoundRectState(GuiGraphicsExtractor context, float x, float y, float w, float h, float r, int color) {
         this(context, x, y, w, h, r, color, color, color, color, color);
     }
 

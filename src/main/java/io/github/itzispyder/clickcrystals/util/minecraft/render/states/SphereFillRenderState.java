@@ -3,7 +3,7 @@ package io.github.itzispyder.clickcrystals.util.minecraft.render.states;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import io.github.itzispyder.clickcrystals.util.MathUtils;
-import io.github.itzispyder.clickcrystals.util.minecraft.render.ClickCrystalsRenderPipelines;
+import io.github.itzispyder.clickcrystals.util.minecraft.render.RenderPipelines;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.render.TextureSetup;
 import net.minecraft.client.renderer.state.gui.GuiElementRenderState;
@@ -45,7 +45,7 @@ public class SphereFillRenderState implements GuiElementRenderState {
 
     @Override
     public RenderPipeline pipeline() {
-        return ClickCrystalsRenderPipelines.PIPELINE_QUADS;
+        return RenderPipelines.PIPELINE_QUADS;
     }
 
     @Override

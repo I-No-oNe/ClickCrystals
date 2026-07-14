@@ -114,14 +114,14 @@ public class HomeScreen extends AnimatedBase {
 
     @Override
     public void resize(int width, int height) {
-        minecraft.setScreen(new HomeScreen());
+        minecraft.setScreenAndShow(new HomeScreen());
     }
 
     @Override
     public boolean keyPressed(KeyEvent e) {
         super.keyPressed(e);
         if (e.input() == GLFW.GLFW_KEY_ENTER && this.selected == searchBar && !searchBar.getQuery().isEmpty()) {
-            mc.setScreen(new SearchScreen() {{
+            mc.setScreenAndShow(new SearchScreen() {{
                 this.searchbar.setQuery(HomeScreen.this.searchBar.getQuery());
                 this.filterByQuery(this.searchbar);
             }});
@@ -132,7 +132,7 @@ public class HomeScreen extends AnimatedBase {
     @Override
     public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {
         if (!OPENED_BEFORE) {
-            mc.setScreen(new DiscordInviteScreen());
+            mc.setScreenAndShow(new DiscordInviteScreen());
             OPENED_BEFORE = true;
             return true;
         }

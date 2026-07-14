@@ -15,7 +15,7 @@ import io.github.itzispyder.clickcrystals.util.minecraft.PlayerUtils;
 import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityEvent;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -76,7 +76,7 @@ public class TotemPops extends Module implements Listener {
             final int status = packet.getEventId();
 
             if (ent == null) return;
-            if (ent.getType() != EntityType.PLAYER) return;
+            if (ent.getType() != EntityTypes.PLAYER) return;
 
             String name = ent.getDisplayName().getString();
             if (name.equals(p.getDisplayName().getString())) {

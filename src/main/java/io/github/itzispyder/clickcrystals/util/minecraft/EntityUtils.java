@@ -133,7 +133,7 @@ public class EntityUtils implements Global {
         if (PlayerUtils.invalid())
             return null;
         for (Entity entity: PlayerUtils.getClientWorld().entitiesForRendering())
-            if (state.distanceToCameraSq == entity.distanceToSqr(mc.gameRenderer.getMainCamera().position()))
+            if (state.distanceToCameraSq == entity.distanceToSqr(mc.gameRenderer.mainCamera().position()))
                 return entity;
         return null;
     }
@@ -289,7 +289,7 @@ public class EntityUtils implements Global {
     public static boolean isSameColorNameTeam(Player player) {
         int playerColor = PlayerUtils.player().getTeamColor();
         int targetColor = player.getTeamColor();
-        return playerColor == targetColor && playerColor != ChatFormatting.WHITE.getChar();
+        return playerColor == targetColor && playerColor != ChatUtils.getFormattingChar(ChatFormatting.WHITE);
     }
 
     public static List<Entity> getEntitiesAt(BlockPos pos) {

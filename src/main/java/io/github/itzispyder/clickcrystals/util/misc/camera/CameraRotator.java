@@ -187,7 +187,7 @@ public class CameraRotator implements Global {
     private void setCameraRotation(float pitch, float yaw) {
         if (PlayerUtils.invalid())
             return;
-        Camera c = mc.gameRenderer.getMainCamera();
+        Camera c = mc.gameRenderer.mainCamera();
         AccessorCamera cam = (AccessorCamera) c;
         cam.invokeSetRotation(yaw, pitch);
     }

@@ -26,7 +26,7 @@ public class AdvancedSettingScreen extends DefaultBase {
 
                 system.scheduler.runDelayedTask(() -> mc.execute(() -> {
                     if (setting.getVal() && PlayerUtils.valid()) {
-                        mc.setScreen(new OverviewScreen());
+                        mc.setScreenAndShow(new OverviewScreen());
                     }
                 }), 200);
             })
@@ -113,7 +113,7 @@ public class AdvancedSettingScreen extends DefaultBase {
 
     @Override
     public void resize(int width, int height) {
-        minecraft.setScreen(new AdvancedSettingScreen());
+        minecraft.setScreenAndShow(new AdvancedSettingScreen());
         ClickCrystals.config.saveKeybinds();
         ClickCrystals.config.save();
     }

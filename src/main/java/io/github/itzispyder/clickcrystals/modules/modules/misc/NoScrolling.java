@@ -27,6 +27,6 @@ public class NoScrolling extends ListenerModule {
     }
 
     public boolean everyWhere(){
-        return mc.screen == null && everyWhere.getVal() && isEnabled();
+        return mc.gui.screen() == null && everyWhere.getVal() && isEnabled();
     }
 }

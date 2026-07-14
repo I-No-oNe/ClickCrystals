@@ -36,7 +36,7 @@ public class CraftCmd extends ScriptCommand implements Global {
             return;
 
         // require an actually-open crafting screen (2x2 inventory or a 3x3 table)
-        if (!(mc.screen instanceof AbstractContainerScreen<?>) || !(mc.player.containerMenu instanceof AbstractCraftingMenu menu))
+        if (!(mc.gui.screen() instanceof AbstractContainerScreen<?>) || !(mc.player.containerMenu instanceof AbstractCraftingMenu menu))
             return;
 
         String id = args.get(0).toString();

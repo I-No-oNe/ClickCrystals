@@ -25,7 +25,7 @@ public class StringSettingElement extends SettingElement<StringSetting> implemen
     public void onRender(GuiGraphicsExtractor context, int mouseX, int mouseY) {
         this.renderSettingDetails(context);
 
-        if (mc.screen instanceof GuiScreen screen) {
+        if (mc.gui.screen() instanceof GuiScreen screen) {
             int drawW = width / (screen.selected == this ? 2 : 4);
             int drawH = 12;
             int drawY = y + height / 2;
@@ -52,7 +52,7 @@ public class StringSettingElement extends SettingElement<StringSetting> implemen
 
     @Override
     public void mouseClicked(double mouseX, double mouseY, int button) {
-        if (mc.screen instanceof GuiScreen screen && isHovered((int)mouseX, (int)mouseY)) {
+        if (mc.gui.screen() instanceof GuiScreen screen && isHovered((int)mouseX, (int)mouseY)) {
             screen.selected = this;
             setting.setVal(input);
         }

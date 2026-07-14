@@ -4,6 +4,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.github.itzispyder.clickcrystals.client.commands.Command;
 import io.github.itzispyder.clickcrystals.util.minecraft.PlayerUtils;
+import io.github.itzispyder.clickcrystals.util.minecraft.VectorParser;
 import net.minecraft.client.multiplayer.ClientSuggestionProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
@@ -66,7 +67,7 @@ public class LookCommand extends Command {
     private void rotateTo(int x, int y, int z) {
         if (PlayerUtils.valid()) {
             BlockPos pos = new BlockPos(x, y, z);
-            Vec3 dir = pos.getCenter().subtract(PlayerUtils.player().getEyePosition());
+            Vec3 dir = VectorParser.getCenter(pos).subtract(PlayerUtils.player().getEyePosition());
 
             system.cameraRotator.ready()
                     .addTicket(dir)

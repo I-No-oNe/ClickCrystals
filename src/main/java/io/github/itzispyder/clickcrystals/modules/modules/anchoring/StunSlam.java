@@ -61,7 +61,7 @@ public class StunSlam extends ListenerModule {
 
     @EventHandler
     private void onAttack(PlayerAttackEntityEvent e) {
-        if (mc.screen != null) return;
+        if (mc.gui.screen() != null) return;
         performStunSlam();
     }
 
