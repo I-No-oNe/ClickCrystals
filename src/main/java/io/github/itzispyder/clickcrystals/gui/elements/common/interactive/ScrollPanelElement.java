@@ -21,6 +21,11 @@ public class ScrollPanelElement extends GuiElement {
     private final Animator interpolation;
     private int interpolationLength;
 
+    public ScrollPanelElement(GuiScreen parentScreen, int x, int y, int width, int height, int gap) {
+        this(parentScreen, x, y, width, height);
+        this.verticalStack(gap);
+    }
+
     public ScrollPanelElement(GuiScreen parentScreen, int x, int y, int width, int height) {
         super(x, y, width, height);
         super.setContainer(true);
@@ -98,10 +103,9 @@ public class ScrollPanelElement extends GuiElement {
     }
 
     // Stack children vertically by their layout height, so collapsed/animating elements close the gap.
-    public ScrollPanelElement verticalStack(int gap) {
+    private void verticalStack(int gap) {
         this.verticalStack = true;
         this.stackGap = gap;
-        return this;
     }
 
     // Anchors on the first child (which already tracks the scroll offset) and re-flows the rest below it.

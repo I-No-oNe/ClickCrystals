@@ -87,7 +87,7 @@ public class AdvancedSettingScreen extends DefaultBase {
     public AdvancedSettingScreen() {
         super("Advanced Settings Screen");
 
-        ScrollPanelElement panel = new ScrollPanelElement(this, contentX + 5, contentY + 21, contentWidth - 5, contentHeight - 21).verticalStack(5);
+        ScrollPanelElement panel = new ScrollPanelElement(this, contentX + 5, contentY + 21, contentWidth - 5, contentHeight - 21,5);
         int caret = contentY + 25;
         int margin = contentX + 5;
 
