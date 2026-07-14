@@ -18,6 +18,7 @@ import java.awt.*;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -43,7 +44,7 @@ public class TextFieldElement extends GuiElement implements Typeable {
     private int preferredCol = -1;
     private int dragAnchor = -1;
     private Function<Integer, Boolean> keyInterceptor;
-    private Runnable onStateChanged; // fires on any cursor/content change
+    private Consumer<Boolean> onStateChanged; // fires on any cursor/content change; arg = caused by typing
 
     private List<FormattedCharSequence> cachedRows = List.of();
 
@@ -170,7 +171,7 @@ public class TextFieldElement extends GuiElement implements Typeable {
         if (closing != 0 && (hasRange() || selectedAll)) {
             wrapSelection(chr, closing);
             preferredCol = -1;
-            if (onStateChanged != null) onStateChanged.run();
+            fireChanged(true);
             return;
         }
 
@@ -180,7 +181,7 @@ public class TextFieldElement extends GuiElement implements Typeable {
         if (isClosingBracket(chr) && selectionStart < content.length() && content.charAt(selectionStart) == chr) {
             shiftRight();
             preferredCol = -1;
-            if (onStateChanged != null) onStateChanged.run();
+            fireChanged(true);
             return;
         }
 
@@ -190,14 +191,14 @@ public class TextFieldElement extends GuiElement implements Typeable {
             onInput(input -> insertInput(chr + String.valueOf(c)));
             shiftRight();
             preferredCol = -1;
-            if (onStateChanged != null) onStateChanged.run();
+            fireChanged(true);
             return;
         }
 
         onInput(input -> insertInput(String.valueOf(chr)));
         shiftRight();
         preferredCol = -1;
-        if (onStateChanged != null) onStateChanged.run();
+        fireChanged(true);
     }
 
     // Returns the matching closing bracket for an opening bracket, or 0 if not a bracket.
@@ -231,7 +232,8 @@ public class TextFieldElement extends GuiElement implements Typeable {
         if (!(mc.gui.screen() instanceof GuiScreen screen)) return false;
         if (keyInterceptor != null && keyInterceptor.apply(key)) return true;
         boolean handled = handleKeyInner(key, screen);
-        if (handled && onStateChanged != null) onStateChanged.run();
+        // Only typing (character entry, backspace, delete) should surface autocomplete; copy/paste/navigation dismiss it.
+        if (handled) fireChanged(key == GLFW.GLFW_KEY_BACKSPACE || key == GLFW.GLFW_KEY_DELETE);
         return handled;
     }
 
@@ -504,6 +506,7 @@ public class TextFieldElement extends GuiElement implements Typeable {
             dragAnchor = pos;
             preferredCol = -1;
             updateSelection();
+            fireChanged(false); // repositioning the caret with the mouse dismisses autocomplete
         }
     }
 
@@ -774,8 +777,13 @@ public class TextFieldElement extends GuiElement implements Typeable {
         this.keyInterceptor = interceptor;
     }
 
-    public void setOnContentChanged(Runnable callback) {
+    public void setOnContentChanged(Consumer<Boolean> callback) {
         this.onStateChanged = callback;
+    }
+
+    // typed = true when the change came from the user entering/removing text (not copy, paste, navigation or mouse).
+    private void fireChanged(boolean typed) {
+        if (onStateChanged != null) onStateChanged.accept(typed);
     }
 
     public void clear() {

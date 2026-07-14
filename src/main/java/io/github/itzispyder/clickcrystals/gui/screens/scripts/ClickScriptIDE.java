@@ -142,8 +142,10 @@ public class ClickScriptIDE extends DefaultBase {
             return false;
         });
 
-        textField.setOnContentChanged(() ->
-                autocomplete.update(textField.getCurrentLine(), textField.getCursorColInLine()));
+        textField.setOnContentChanged(typed -> {
+            if (typed) autocomplete.update(textField.getCurrentLine(), textField.getCursorColInLine());
+            else autocomplete.hide();
+        });
 
         this.mouseDragListeners.add((mx, my, button, dx, dy) -> {
             if (button == 0) textField.onDrag(mx, my);
