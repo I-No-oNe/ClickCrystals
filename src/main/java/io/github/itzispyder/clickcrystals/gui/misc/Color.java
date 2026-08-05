@@ -61,6 +61,20 @@ public class Color {
         return result;
     }
 
+    /**
+     * Mixes two argb colors, delta 0 being all of the first and 1 all of the second.
+     */
+    public static int blend(int hexFrom, int hexTo, double delta) {
+        delta = MathUtils.clamp(delta, 0.0, 1.0);
+        int result = 0;
+        for (int shift = 0; shift <= 24; shift += 8) {
+            int from = hexFrom >> shift & 0xFF;
+            int to = hexTo >> shift & 0xFF;
+            result |= (int)MathUtils.lerp(from, to, delta) << shift;
+        }
+        return result;
+    }
+
     private final int r, g, b, a, hex;
 
     private Color(int hex, int a, int r, int g, int b) {

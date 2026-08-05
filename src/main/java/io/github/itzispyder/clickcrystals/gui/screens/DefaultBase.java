@@ -158,8 +158,9 @@ public abstract class DefaultBase extends AnimatedBase {
         buttonSettings.x = baseX + 10;
         buttonSettings.y = baseY + caret;
 
-        caret += 20;
-        RenderUtils.fillRoundTabTop(context, 10, caret, 90, baseHeight - caret, 5, Shades.TRANS_BLACK);
+        // sits inside the backdrop instead of running into its rounded bottom corner
+        caret += 14;
+        RenderUtils.fillRoundRect(context, 10, caret, 90, baseHeight - 6 - caret, 5, Shades.TRANS_BLACK);
         caret += 5;
         RenderUtils.drawText(context, "Client Owners: ", 15, caret, 0.65F, false);
         caret += 8;

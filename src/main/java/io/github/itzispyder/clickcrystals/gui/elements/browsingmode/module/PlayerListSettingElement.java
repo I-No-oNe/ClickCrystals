@@ -1,43 +1,34 @@
 package io.github.itzispyder.clickcrystals.gui.elements.browsingmode.module;
 
-import io.github.itzispyder.clickcrystals.gui.misc.Shades;
-import io.github.itzispyder.clickcrystals.modules.settings.AbstractListSetting;
 import io.github.itzispyder.clickcrystals.modules.settings.PlayerListSetting;
-import io.github.itzispyder.clickcrystals.util.minecraft.render.RenderUtils;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.PlayerFaceExtractor;
 import net.minecraft.client.multiplayer.PlayerInfo;
 
 public class PlayerListSettingElement extends ListSettingElement {
 
-    private static final int HEAD_SIZE = 9;
-
-    private final PlayerListSetting setting;
-
     public PlayerListSettingElement(PlayerListSetting setting, int x, int y) {
         super(setting, x, y);
-        this.setting = setting;
     }
 
     @Override
-    protected void renderEntry(GuiGraphicsExtractor context, String entry, int rowY, int mouseX, int mouseY) {
-        RenderUtils.fillRoundHoriLine(context, rowX(), rowY, rowWidth(), ROW_HEIGHT, Shades.GRAY);
-
-        PlayerInfo info = PlayerListSetting.getInfo(entry);
-        if (info != null) {
-            PlayerFaceExtractor.extractRenderState(context, info.getSkin(), textX(), rowY + (ROW_HEIGHT - HEAD_SIZE) / 2, HEAD_SIZE);
+    protected int renderRowIcon(GuiGraphicsExtractor context, String text, int iconX, int rowY) {
+        PlayerInfo info = PlayerListSetting.getInfo(text);
+        if (info == null) {
+            return 0;
         }
-        // offline players stay in the list, just greyed out
-        RenderUtils.drawText(context, (info != null ? "" : "§7") + entry, textX() + HEAD_SIZE + 3, rowY + ROW_HEIGHT / 3, 0.7F, false);
-        renderRemoveButton(context, rowY, mouseX, mouseY);
+        PlayerFaceExtractor.extractRenderState(context, info.getSkin(), iconX, rowY + (ROW_HEIGHT - ICON_SIZE) / 2, ICON_SIZE);
+        return ICON_SIZE + 3;
     }
 
-    // fix up the casing of names that are online, they have to match exactly to be useful
     @Override
-    protected void commit() {
-        for (String entry : AbstractListSetting.split(getInput())) {
-            setting.addEntry(PlayerListSetting.closest(entry));
-        }
-        clearInput();
+    protected String placeholder() {
+        return "add a player...";
+    }
+
+    // names have to match exactly to be worth anything, so borrow the casing from the tab list
+    @Override
+    protected String normalize(String text) {
+        return PlayerListSetting.closest(text);
     }
 }

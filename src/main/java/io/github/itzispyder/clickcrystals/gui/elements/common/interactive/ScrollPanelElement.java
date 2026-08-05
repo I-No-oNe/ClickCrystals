@@ -2,6 +2,9 @@ package io.github.itzispyder.clickcrystals.gui.elements.common.interactive;
 
 import io.github.itzispyder.clickcrystals.gui.GuiElement;
 import io.github.itzispyder.clickcrystals.gui.GuiScreen;
+import io.github.itzispyder.clickcrystals.gui.misc.Color;
+import io.github.itzispyder.clickcrystals.gui.misc.Shades;
+import io.github.itzispyder.clickcrystals.gui.misc.animators.Animations;
 import io.github.itzispyder.clickcrystals.gui.misc.animators.Animator;
 import io.github.itzispyder.clickcrystals.modules.Module;
 import io.github.itzispyder.clickcrystals.modules.modules.clickcrystals.GuiBorders;
@@ -13,6 +16,9 @@ public class ScrollPanelElement extends GuiElement {
 
     private final GuiScreen parentScreen;
     public static final int SCROLL_MULTIPLIER = 15;
+    public static final int SCROLLBAR_WIDTH = 6;
+    private static final int THUMB_WIDTH = 4;
+    private static final int MIN_THUMB_LENGTH = 14;
     private int remainingUp, remainingDown, limitTop, limitBottom, scrollbarY, scrollbarHeight, prevDrag;
     private boolean scrolling;
     private boolean verticalStack;
@@ -20,6 +26,8 @@ public class ScrollPanelElement extends GuiElement {
 
     private final Animator interpolation;
     private int interpolationLength;
+    private final Animator thumbHighlight;
+    private boolean thumbHot;
 
     public ScrollPanelElement(GuiScreen parentScreen, int x, int y, int width, int height, int gap) {
         this(parentScreen, x, y, width, height);
@@ -30,7 +38,8 @@ public class ScrollPanelElement extends GuiElement {
         super(x, y, width, height);
         super.setContainer(true);
         this.parentScreen = parentScreen;
-        this.interpolation = new Animator(100);
+        this.interpolation = new Animator(140, Animations.FADE_IN_AND_OUT);
+        this.thumbHighlight = new Animator(120, Animations.FADE_IN_AND_OUT_SLIGHT);
 
         remainingUp = remainingDown = 0;
         limitTop = y;
@@ -134,7 +143,7 @@ public class ScrollPanelElement extends GuiElement {
         restack();
         boolean bl = canRender();
 
-        float interpolatedDelta = (float)(interpolationLength * interpolation.getProgressClampedReversed());
+        float interpolatedDelta = (float)(interpolationLength * interpolation.getAnimationReversed());
         context.enableScissor(x, y, x + width, y + height);
         context.pose().pushMatrix();
         context.pose().translate(0, -interpolatedDelta);
@@ -160,8 +169,6 @@ public class ScrollPanelElement extends GuiElement {
             return;
 
         double fullDoc = remainingUp + remainingDown + this.height;
-        double drawStartRatio = remainingUp / fullDoc;
-        double ratio = this.height / fullDoc;
 
         if (scrolling && mouseY != prevDrag) {
             double deltaY = mouseY - prevDrag;
@@ -171,17 +178,23 @@ public class ScrollPanelElement extends GuiElement {
             prevDrag = mouseY;
         }
 
-        RenderUtils.fillRect(context, x + width - 6, y, 6, height, 0xFF1F1F1F);
-
-        int drawStart = (int)(this.height * drawStartRatio);
-        int drawLength = (int)(this.height * ratio);
-
-        RenderUtils.fillRect(context, this.x + this.width - 6, this.y + drawStart, 6, drawLength, 0xFFAAAAAA);
-        RenderUtils.fillRect(context, this.x + this.width - 1, this.y + drawStart, 1, drawLength, 0xFF555555);
-        RenderUtils.fillRect(context, this.x + this.width - 6, this.y + drawStart + drawLength - 1, 6, 1, 0xFF555555);
+        // a thumb the size of what is on screen, but never so short it cannot be grabbed
+        int drawLength = Math.max(MIN_THUMB_LENGTH, (int)(this.height * (this.height / fullDoc)));
+        int drawStart = (int)((this.height - drawLength) * (remainingUp / (double)(remainingUp + remainingDown)));
 
         scrollbarY = this.y + drawStart;
         scrollbarHeight = drawLength;
+
+        boolean hot = scrolling || isHovered(mouseX, mouseY);
+        if (hot != thumbHot) {
+            thumbHot = hot;
+            thumbHighlight.reset();
+        }
+        double highlight = hot ? thumbHighlight.getAnimation() : thumbHighlight.getAnimationReversed();
+
+        int trackX = x + width - SCROLLBAR_WIDTH + (SCROLLBAR_WIDTH - THUMB_WIDTH) / 2;
+        RenderUtils.fillRoundVertLine(context, trackX + 1, y, height, THUMB_WIDTH - 2, Shades.TRANS_DARK_GRAY);
+        RenderUtils.fillRoundVertLine(context, trackX, scrollbarY, drawLength, THUMB_WIDTH, Color.blend(Shades.GENERIC_LOW, Shades.GENERIC, highlight));
     }
 
     @Override
@@ -202,7 +215,7 @@ public class ScrollPanelElement extends GuiElement {
      */
     @Override
     public boolean isHovered(int mouseX, int mouseY) {
-        return super.isHovered(mouseX, mouseY) && mouseX > (x + width - 6) && mouseY > scrollbarY && mouseY < scrollbarY + scrollbarHeight;
+        return super.isHovered(mouseX, mouseY) && mouseX > (x + width - SCROLLBAR_WIDTH) && mouseY > scrollbarY && mouseY < scrollbarY + scrollbarHeight;
     }
 
     public void onScroll(double amount) {

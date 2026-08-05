@@ -19,6 +19,10 @@ import java.util.Set;
  */
 public class ItemListSetting extends AbstractListSetting {
 
+    // parsing every entry is not free and lists are read every tick, so keep the last result
+    private String parsedFrom;
+    private List<Item> parsed = List.of();
+
     public ItemListSetting(String name, String description, String def, String val) {
         super(name, description, def, val);
     }
@@ -28,8 +32,23 @@ public class ItemListSetting extends AbstractListSetting {
         return new ItemListSettingElement(this, x, y);
     }
 
+    /**
+     * The items this list names, skipping entries that name nothing.
+     */
     public List<Item> getItems() {
-        return getEntries().stream().map(ItemListSetting::parse).filter(item -> item != Items.AIR).toList();
+        String val = getVal();
+        if (!val.equals(parsedFrom)) {
+            parsedFrom = val;
+            parsed = getRawItems().stream().map(ItemListSetting::parse).filter(item -> item != Items.AIR).toList();
+        }
+        return parsed;
+    }
+
+    /**
+     * The entries as they are written, including any that name no item.
+     */
+    public List<String> getRawItems() {
+        return getEntries();
     }
 
     public boolean matches(ItemStack stack) {

@@ -32,8 +32,7 @@ public class TeamDetector extends ListenerModule {
 
     public final PlayerListSetting playerNames = scGeneral.add(createPlayerListSetting()
             .name("manual-team-players")
-            .description("Manually add players by their usernames.")
-            .visibleWhen(() -> teamFindingMethod.getVal() == TeamsMethod.MANUAL)
+            .description("Players always treated as teammates, on top of whatever the detection mode finds. Middle-click a player to add or remove them.")
             .def("")
             .build()
     );

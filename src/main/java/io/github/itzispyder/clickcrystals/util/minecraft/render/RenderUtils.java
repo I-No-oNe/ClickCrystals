@@ -7,8 +7,12 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.joml.Matrix3x2fStack;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public final class RenderUtils implements Global {
 
@@ -235,6 +239,31 @@ public final class RenderUtils implements Global {
     public static void drawItem(GuiGraphicsExtractor context, ItemStack item, int x, int y) {
         drawItem(context, item, x, y, 1.0F);
     }
+
+    /**
+     * Draws an item outside of gameplay without taking the client down with it.
+     * <p>
+     * Item models resolve against the world and the holding player, so drawing certain items
+     * from a menu (the main menu has neither) throws, and vanilla turns that into a crash
+     * report. An item that fails once is remembered and skipped from then on.
+     *
+     * @return whether the item was drawn
+     */
+    public static boolean drawItemSafely(GuiGraphicsExtractor context, ItemStack item, int x, int y, int size) {
+        if (item == null || item.isEmpty() || uncrashableItems.contains(item.getItem())) {
+            return false;
+        }
+        try {
+            drawItem(context, item, x, y, size);
+            return true;
+        }
+        catch (Throwable e) {
+            uncrashableItems.add(item.getItem());
+            return false;
+        }
+    }
+
+    private static final Set<Item> uncrashableItems = new HashSet<>();
 
     public static int width() {
         return mc.getWindow().getGuiScaledWidth();
