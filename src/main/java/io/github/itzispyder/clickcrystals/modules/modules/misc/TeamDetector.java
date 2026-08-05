@@ -9,6 +9,7 @@ import io.github.itzispyder.clickcrystals.modules.Module;
 import io.github.itzispyder.clickcrystals.modules.ModuleSetting;
 import io.github.itzispyder.clickcrystals.modules.modules.ListenerModule;
 import io.github.itzispyder.clickcrystals.modules.settings.EnumSetting;
+import io.github.itzispyder.clickcrystals.modules.settings.PlayerListSetting;
 import io.github.itzispyder.clickcrystals.modules.settings.SettingSection;
 import io.github.itzispyder.clickcrystals.util.minecraft.ChatUtils;
 import io.github.itzispyder.clickcrystals.util.minecraft.PlayerUtils;
@@ -17,16 +18,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Scoreboard;
 
-import java.util.HashSet;
-import java.util.Set;
 
 public class TeamDetector extends ListenerModule {
 
     private final SettingSection scGeneral = getGeneralSection();
-
-    // parsed manual list, rebuilt only when the raw setting string changes
-    private String cachedNamesRaw;
-    private Set<String> cachedNames = Set.of();
 
     public final ModuleSetting<TeamsMethod> teamFindingMethod = scGeneral.add(EnumSetting.create(TeamsMethod.class)
             .name("team-detection-mode")
@@ -35,9 +30,9 @@ public class TeamDetector extends ListenerModule {
             .build()
     );
 
-    public final ModuleSetting<String> playerNames = scGeneral.add(createStringSetting()
+    public final PlayerListSetting playerNames = scGeneral.add(createPlayerListSetting()
             .name("manual-team-players")
-            .description("Manually add players by their exact usernames. Separate names using commas.")
+            .description("Manually add players by their usernames.")
             .visibleWhen(() -> teamFindingMethod.getVal() == TeamsMethod.MANUAL)
             .def("")
             .build()
@@ -77,18 +72,13 @@ public class TeamDetector extends ListenerModule {
             return;
 
         String playerName = player.getName().getString();
-        String current = playerNames.getVal();
 
-        if (current.toLowerCase().contains(playerName.toLowerCase())) {
-            String updated = current.replaceAll("(?i),?\\b" + playerName + "\\b,?", "")
-                    .replaceAll("^,", "")
-                    .replaceAll(",$", "");
-            playerNames.setVal(updated);
+        if (playerNames.contains(playerName)) {
+            playerNames.removeEntry(playerName);
             ChatUtils.sendPrefixMessage("§cRemoved " + playerName + " from team");
         }
         else {
-            String updated = current.isEmpty() ? playerName : current + "," + playerName;
-            playerNames.setVal(updated);
+            playerNames.addEntry(playerName);
             ChatUtils.sendPrefixMessage("§aAdded " + playerName + " to team");
         }
         e.setCancelled(true);
@@ -103,8 +93,8 @@ public class TeamDetector extends ListenerModule {
         if (!td.isEnabled())
             return false;
 
-        // manual list (cached, O(1) lookup)
-        if (td.teamNames().contains(target.getName().getString().toLowerCase()))
+        // manual list
+        if (td.playerNames.matches(target))
             return true;
 
         // automatic detection
@@ -118,21 +108,6 @@ public class TeamDetector extends ListenerModule {
     public static boolean shouldCancelCcsAttack(Player target) {
         // isTeammate already gates on enabled/valid; only the ccs toggle is extra here
         return Module.get(TeamDetector.class).cancelCcs.getVal() && isTeammate(target);
-    }
-
-    private Set<String> teamNames() {
-        String raw = playerNames.getVal();
-        if (!raw.equals(cachedNamesRaw)) {
-            cachedNamesRaw = raw;
-            Set<String> names = new HashSet<>();
-            for (String name : raw.split(",")) {
-                String trimmed = name.trim().toLowerCase();
-                if (!trimmed.isEmpty())
-                    names.add(trimmed);
-            }
-            cachedNames = names;
-        }
-        return cachedNames;
     }
 
     private static boolean isSameScoreboardTeam(Player player) {

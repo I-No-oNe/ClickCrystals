@@ -1,22 +1,23 @@
 package io.github.itzispyder.clickcrystals.modules.settings;
 
 import io.github.itzispyder.clickcrystals.gui.elements.browsingmode.module.ItemListSettingElement;
+import io.github.itzispyder.clickcrystals.util.StringUtils;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 /**
- * A list whose entries name items, matched the same loose way the rest of the client
- * matches them: an entry hits when it appears anywhere in the item's translation key.
+ * A list of items. Entries are item ids, so a list means the exact items it names and
+ * nothing else. Typed text is resolved to the closest item before it is added, so
+ * "dia sword" lands on minecraft:diamond_sword.
  */
 public class ItemListSetting extends AbstractListSetting {
-
-    private static final Map<String, ItemStack> ICONS = new HashMap<>();
 
     public ItemListSetting(String name, String description, String def, String val) {
         super(name, description, def, val);
@@ -27,34 +28,60 @@ public class ItemListSetting extends AbstractListSetting {
         return new ItemListSettingElement(this, x, y);
     }
 
-    public boolean matches(ItemStack item) {
-        return item != null && !item.isEmpty() && matches(item.getItem());
+    public List<Item> getItems() {
+        return getEntries().stream().map(ItemListSetting::parse).filter(item -> item != Items.AIR).toList();
+    }
+
+    public boolean matches(ItemStack stack) {
+        return stack != null && !stack.isEmpty() && matches(stack.getItem());
     }
 
     public boolean matches(Item item) {
-        if (item == null) {
-            return false;
-        }
-        String id = item.getDescriptionId().toLowerCase();
-        return getEntries().stream().anyMatch(entry -> id.contains(entry.toLowerCase()));
+        return item != null && item != Items.AIR && getItems().contains(item);
+    }
+
+    public void addItem(Item item) {
+        addEntry(idOf(item));
+    }
+
+    public void removeItem(Item item) {
+        removeEntry(idOf(item));
     }
 
     /**
-     * Best guess icon for an entry, so the list can show what it is pointing at.
-     * Exact ids win, otherwise the first item whose id contains the entry.
+     * The item an entry names, or {@link Items#AIR} when it names nothing.
      */
-    public static ItemStack getIcon(String entry) {
-        return ICONS.computeIfAbsent(entry.toLowerCase(), key -> {
-            Item exact = BuiltInRegistries.ITEM.getValue(Identifier.withDefaultNamespace(key));
-            if (exact != Items.AIR) {
-                return exact.getDefaultInstance();
-            }
-            return BuiltInRegistries.ITEM.stream()
-                    .filter(item -> item != Items.AIR && item.getDescriptionId().toLowerCase().contains(key))
-                    .findFirst()
-                    .map(Item::getDefaultInstance)
-                    .orElse(ItemStack.EMPTY);
-        });
+    public static Item parse(String entry) {
+        Identifier id = Identifier.tryParse(entry.trim().toLowerCase());
+        return id == null ? Items.AIR : BuiltInRegistries.ITEM.getValue(id);
+    }
+
+    public static String idOf(Item item) {
+        Identifier id = BuiltInRegistries.ITEM.getKey(item);
+        return id.getNamespace().equals(Identifier.DEFAULT_NAMESPACE) ? id.getPath() : id.toString();
+    }
+
+    /**
+     * Best item for whatever the user typed, or {@link Items#AIR} if nothing comes close.
+     */
+    public static Item closest(String input) {
+        String query = input.trim().toLowerCase().replace(' ', '_');
+        if (query.isEmpty()) {
+            return Items.AIR;
+        }
+
+        Item exact = parse(query);
+        if (exact != Items.AIR) {
+            return exact;
+        }
+
+        Set<Identifier> ids = BuiltInRegistries.ITEM.keySet();
+        String path = StringUtils.closest(ids.stream().map(Identifier::getPath).toList(), query);
+        return ids.stream()
+                .filter(id -> id.getPath().equals(path))
+                .findFirst()
+                .map(BuiltInRegistries.ITEM::getValue)
+                .orElse(Items.AIR);
     }
 
     public static Builder create() {
@@ -62,6 +89,10 @@ public class ItemListSetting extends AbstractListSetting {
     }
 
     public static class Builder extends SettingBuilder<String, Builder, ItemListSetting> {
+
+        public Builder def(Item... items) {
+            return def(String.join(SEPARATOR, Arrays.stream(items).map(ItemListSetting::idOf).toList()));
+        }
 
         public Builder def(String... entries) {
             return def(String.join(SEPARATOR, entries));

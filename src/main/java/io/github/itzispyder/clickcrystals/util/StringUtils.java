@@ -20,6 +20,52 @@ public final class StringUtils {
         return s == null ? "" : s;
     }
 
+    /**
+     * How far off two strings are, ignoring case. 0 means equal.
+     * Candidates that contain the query score below any that merely resemble it.
+     */
+    public static int closeness(String candidate, String query) {
+        String a = nullable(candidate).toLowerCase();
+        String b = nullable(query).toLowerCase();
+        return a.contains(b) ? a.length() - b.length() : 1000 + distance(a, b);
+    }
+
+    /**
+     * The candidate closest to the query, or null when nothing is close enough to be a guess.
+     */
+    public static String closest(Iterable<String> candidates, String query) {
+        String best = null;
+        // tolerate typos up to half the query, past that a guess is worse than no guess
+        int bestScore = 1001 + Math.max(3, nullable(query).length() / 2);
+        for (String candidate : candidates) {
+            int score = closeness(candidate, query);
+            if (score < bestScore) {
+                bestScore = score;
+                best = candidate;
+            }
+        }
+        return best;
+    }
+
+    // levenshtein distance, single row
+    public static int distance(String a, String b) {
+        int[] row = new int[b.length() + 1];
+        for (int j = 0; j <= b.length(); j++) {
+            row[j] = j;
+        }
+        for (int i = 1; i <= a.length(); i++) {
+            int prev = row[0];
+            row[0] = i;
+            for (int j = 1; j <= b.length(); j++) {
+                int old = row[j];
+                row[j] = Math.min(Math.min(row[j] + 1, row[j - 1] + 1),
+                        prev + (a.charAt(i - 1) == b.charAt(j - 1) ? 0 : 1));
+                prev = old;
+            }
+        }
+        return row[b.length()];
+    }
+
     public static boolean matchAll(String str, BiPredicate<String, String> predicate, String... values) {
         for (String value : values) {
             if (!predicate.test(str, value)) {

@@ -26,6 +26,10 @@ public interface SettingContainer {
         return ItemListSetting.create();
     }
 
+    default PlayerListSetting.Builder createPlayerListSetting() {
+        return PlayerListSetting.create();
+    }
+
     default KeybindSetting.Builder createBindSetting() {
         return KeybindSetting.create();
     }

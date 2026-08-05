@@ -60,10 +60,14 @@ public class ListSettingElement extends SettingElement<AbstractListSetting> impl
     }
 
     protected void renderEntry(GuiGraphicsExtractor context, String entry, int rowY, int mouseX, int mouseY) {
-        boolean hoveringRemove = isOverRemove(mouseX, mouseY, rowY);
         RenderUtils.fillRoundHoriLine(context, rowX(), rowY, rowWidth(), ROW_HEIGHT, Shades.GRAY);
         RenderUtils.drawText(context, entry, textX(), rowY + ROW_HEIGHT / 3, 0.7F, false);
-        RenderUtils.drawText(context, hoveringRemove ? "§cx" : "§7x", rowX() + rowWidth() - REMOVE_WIDTH + 4, rowY + ROW_HEIGHT / 3, 0.7F, false);
+        renderRemoveButton(context, rowY, mouseX, mouseY);
+    }
+
+    protected void renderRemoveButton(GuiGraphicsExtractor context, int rowY, int mouseX, int mouseY) {
+        String x = isOverRemove(mouseX, mouseY, rowY) ? "§cx" : "§7x";
+        RenderUtils.drawText(context, x, rowX() + rowWidth() - REMOVE_WIDTH + 4, rowY + ROW_HEIGHT / 3, 0.7F, false);
     }
 
     protected void renderInput(GuiGraphicsExtractor context, int rowY) {
@@ -130,6 +134,10 @@ public class ListSettingElement extends SettingElement<AbstractListSetting> impl
         for (String entry : AbstractListSetting.split(input)) {
             setting.addEntry(entry);
         }
+        clearInput();
+    }
+
+    protected void clearInput() {
         this.input = "";
     }
 
