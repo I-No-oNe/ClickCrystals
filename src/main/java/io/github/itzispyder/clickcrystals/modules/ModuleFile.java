@@ -76,6 +76,9 @@ public class ModuleFile {
         else if (setting instanceof StringSetting v) {
             v.setVal(stringEntries.getOrDefault(id, v.getDef()));
         }
+        else if (setting instanceof AbstractListSetting v) {
+            v.setVal(stringEntries.getOrDefault(id, v.getDef()));
+        }
         else if (setting instanceof EnumSetting<?> v) {
             String val = stringEntries.getOrDefault(id, v.getDef().name());
             for (Enum cons : v.getDef().getClass().getEnumConstants())

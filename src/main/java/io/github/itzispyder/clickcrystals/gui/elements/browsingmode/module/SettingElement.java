@@ -48,9 +48,15 @@ public abstract class SettingElement<T extends ModuleSetting<?>> extends GuiElem
         return MathUtils.clamp(visibilityAnimator.getAnimation(), 0.0, 1.0);
     }
 
+    // Vertical space this setting reserves when fully shown. Settings that grow with their
+    // content (lists, for example) override this instead of the fixed constructor height.
+    protected int getSlotHeight() {
+        return slotHeight;
+    }
+
     @Override
     public int getLayoutHeight() {
-        return (int) (slotHeight * visibility());
+        return (int) (getSlotHeight() * visibility());
     }
 
     @Override
