@@ -4,6 +4,8 @@ import io.github.itzispyder.clickcrystals.modules.settings.PlayerListSetting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.PlayerFaceExtractor;
 import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.client.resources.DefaultPlayerSkin;
+import net.minecraft.world.entity.player.PlayerSkin;
 
 public class PlayerListSettingElement extends ListSettingElement {
 
@@ -11,13 +13,15 @@ public class PlayerListSettingElement extends ListSettingElement {
         super(setting, x, y);
     }
 
+    // players who are not around still get a head, just the default one
     @Override
     protected int renderRowIcon(GuiGraphicsExtractor context, String text, int iconX, int rowY) {
-        PlayerInfo info = PlayerListSetting.getInfo(text);
-        if (info == null) {
+        if (text.isBlank()) {
             return 0;
         }
-        PlayerFaceExtractor.extractRenderState(context, info.getSkin(), iconX, rowY + (ROW_HEIGHT - ICON_SIZE) / 2, ICON_SIZE);
+        PlayerInfo info = PlayerListSetting.getInfo(text);
+        PlayerSkin skin = info != null ? info.getSkin() : DefaultPlayerSkin.getDefaultSkin();
+        PlayerFaceExtractor.extractRenderState(context, skin, iconX, rowY + (ROW_HEIGHT - ICON_SIZE) / 2, ICON_SIZE);
         return ICON_SIZE + 3;
     }
 

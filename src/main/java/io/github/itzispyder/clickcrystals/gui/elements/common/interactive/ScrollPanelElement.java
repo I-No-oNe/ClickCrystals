@@ -6,6 +6,7 @@ import io.github.itzispyder.clickcrystals.gui.misc.Color;
 import io.github.itzispyder.clickcrystals.gui.misc.Shades;
 import io.github.itzispyder.clickcrystals.gui.misc.animators.Animations;
 import io.github.itzispyder.clickcrystals.gui.misc.animators.Animator;
+import io.github.itzispyder.clickcrystals.gui.misc.animators.Hover;
 import io.github.itzispyder.clickcrystals.modules.Module;
 import io.github.itzispyder.clickcrystals.modules.modules.clickcrystals.GuiBorders;
 import io.github.itzispyder.clickcrystals.util.MathUtils;
@@ -26,8 +27,7 @@ public class ScrollPanelElement extends GuiElement {
 
     private final Animator interpolation;
     private int interpolationLength;
-    private final Animator thumbHighlight;
-    private boolean thumbHot;
+    private final Hover thumbHighlight = new Hover(120);
 
     public ScrollPanelElement(GuiScreen parentScreen, int x, int y, int width, int height, int gap) {
         this(parentScreen, x, y, width, height);
@@ -39,7 +39,6 @@ public class ScrollPanelElement extends GuiElement {
         super.setContainer(true);
         this.parentScreen = parentScreen;
         this.interpolation = new Animator(140, Animations.FADE_IN_AND_OUT);
-        this.thumbHighlight = new Animator(120, Animations.FADE_IN_AND_OUT_SLIGHT);
 
         remainingUp = remainingDown = 0;
         limitTop = y;
@@ -185,12 +184,7 @@ public class ScrollPanelElement extends GuiElement {
         scrollbarY = this.y + drawStart;
         scrollbarHeight = drawLength;
 
-        boolean hot = scrolling || isHovered(mouseX, mouseY);
-        if (hot != thumbHot) {
-            thumbHot = hot;
-            thumbHighlight.reset();
-        }
-        double highlight = hot ? thumbHighlight.getAnimation() : thumbHighlight.getAnimationReversed();
+        double highlight = thumbHighlight.update(scrolling || isHovered(mouseX, mouseY));
 
         int trackX = x + width - SCROLLBAR_WIDTH + (SCROLLBAR_WIDTH - THUMB_WIDTH) / 2;
         RenderUtils.fillRoundVertLine(context, trackX + 1, y, height, THUMB_WIDTH - 2, Shades.TRANS_DARK_GRAY);

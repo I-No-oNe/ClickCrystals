@@ -4,8 +4,8 @@ import io.github.itzispyder.clickcrystals.gui.GuiScreen;
 import io.github.itzispyder.clickcrystals.gui.elements.common.Typeable;
 import io.github.itzispyder.clickcrystals.gui.misc.Color;
 import io.github.itzispyder.clickcrystals.gui.misc.Shades;
+import io.github.itzispyder.clickcrystals.gui.misc.animators.Hover;
 import io.github.itzispyder.clickcrystals.modules.settings.AbstractListSetting;
-import io.github.itzispyder.clickcrystals.util.MathUtils;
 import io.github.itzispyder.clickcrystals.util.minecraft.render.RenderUtils;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.lwjgl.glfw.GLFW;
@@ -22,6 +22,7 @@ public class ListSettingElement extends SettingElement<AbstractListSetting> impl
 
     protected static final int ROW_HEIGHT = 14;
     protected static final int ROW_GAP = 3;
+    protected static final int ROW_TOP_GAP = 4;
     protected static final int ICON_SIZE = 10;
     protected static final int REMOVE_WIDTH = 12;
     protected static final float TEXT_SCALE = 0.7F;
@@ -29,11 +30,9 @@ public class ListSettingElement extends SettingElement<AbstractListSetting> impl
 
     private final AbstractListSetting setting;
     private final List<String> rows;
-    private final List<Double> glow;
+    private final List<Hover> glow;
     private int editing;
     private int detailsHeight;
-    private long lastGlowStep;
-    private double glowStep;
 
     public ListSettingElement(AbstractListSetting setting, int x, int y) {
         super(setting, x, y);
@@ -42,7 +41,6 @@ public class ListSettingElement extends SettingElement<AbstractListSetting> impl
         this.glow = new ArrayList<>();
         this.editing = -1;
         this.detailsHeight = height;
-        this.lastGlowStep = System.currentTimeMillis();
         createResetButton();
     }
 
@@ -62,7 +60,7 @@ public class ListSettingElement extends SettingElement<AbstractListSetting> impl
 
     @Override
     protected int getSlotHeight() {
-        return detailsHeight + rows().size() * (ROW_HEIGHT + ROW_GAP) + 4;
+        return detailsHeight + ROW_TOP_GAP + rows().size() * (ROW_HEIGHT + ROW_GAP) + 4;
     }
 
     @Override
@@ -74,12 +72,8 @@ public class ListSettingElement extends SettingElement<AbstractListSetting> impl
         shouldUnderline = underline;
         this.detailsHeight = height;
 
-        long now = System.currentTimeMillis();
-        this.glowStep = MathUtils.clamp((now - lastGlowStep) / (double)GLOW_TIME, 0.0, 1.0);
-        this.lastGlowStep = now;
-
         List<String> rows = rows();
-        int caret = y + detailsHeight;
+        int caret = y + detailsHeight + ROW_TOP_GAP;
         for (int i = 0; i < rows.size(); i++) {
             renderRow(context, rows.get(i), i, caret, mouseX, mouseY);
             caret += ROW_HEIGHT + ROW_GAP;
@@ -98,39 +92,51 @@ public class ListSettingElement extends SettingElement<AbstractListSetting> impl
         boolean hovered = isOverRow(mouseX, mouseY, rowY);
         boolean last = index == rows().size() - 1;
 
-        RenderUtils.fillRoundRect(context, rowX(), rowY, rowWidth(), ROW_HEIGHT, 3, rowColor(index, active, hovered));
-        if (active) {
-            // accent underline marks the row taking the keystrokes
-            RenderUtils.fillRoundHoriLine(context, rowX() + 3, rowY + ROW_HEIGHT - 1, rowWidth() - 6, 1, Shades.GENERIC);
+        int color = rowColor(index, active, hovered);
+        double lift = glowAt(index);
+        // the row leans towards the mouse as it lights up
+        int rowX = rowX() + (int)Math.round(lift * 2);
+
+        RenderUtils.fillRoundRect(context, rowX, rowY, rowWidth(), ROW_HEIGHT, 3, color);
+        if (lift > 0.01) {
+            // accent underline grows in from the middle as the row takes the keystrokes
+            int lineWidth = (int)((rowWidth() - 6) * lift);
+            RenderUtils.fillRoundHoriLine(context, rowX + rowWidth() / 2 - lineWidth / 2, rowY + ROW_HEIGHT - 1, lineWidth, 1, Color.blend(Shades.TRANS_GENERIC, Shades.GENERIC, lift));
         }
 
-        int textX = textX() + renderRowIcon(context, text, textX(), rowY);
+        int textX = rowX + 5 + renderRowIcon(context, text, rowX + 5, rowY);
         int textY = rowY + (ROW_HEIGHT - 6) / 2;
-        int textW = rowX() + rowWidth() - REMOVE_WIDTH - textX - 2;
+        int textW = rowX + rowWidth() - REMOVE_WIDTH - textX - 2;
 
         if (text.isEmpty() && !active) {
             RenderUtils.drawText(context, "§8" + (last ? placeholder() : "empty"), textX, textY, TEXT_SCALE, false);
         }
         else {
-            RenderUtils.drawText(context, trimToWidth(text, textW) + (active ? "§f§l|" : ""), textX, textY, TEXT_SCALE, false);
+            RenderUtils.drawText(context, trimToWidth(text, textW) + (active && caretVisible() ? "§f§l|" : ""), textX, textY, TEXT_SCALE, false);
         }
 
         if (!text.isEmpty() && (hovered || active)) {
             boolean overRemove = isOverRemove(mouseX, mouseY, rowY);
-            RenderUtils.drawText(context, overRemove ? "§cx" : "§7x", rowX() + rowWidth() - REMOVE_WIDTH + 4, textY, TEXT_SCALE, false);
+            RenderUtils.drawText(context, overRemove ? "§cx" : "§7x", rowX + rowWidth() - REMOVE_WIDTH + 4, textY, TEXT_SCALE, false);
         }
+    }
+
+    // blinks the way every other text field does
+    private boolean caretVisible() {
+        return System.currentTimeMillis() % 1000 < 600;
+    }
+
+    protected double glowAt(int index) {
+        return index < glow.size() ? glow.get(index).value() : 0.0;
     }
 
     // rows ease into their highlight instead of snapping between two flat colors
     protected int rowColor(int index, boolean active, boolean hovered) {
-        double target = active ? 1.0 : hovered ? 0.45 : 0.0;
         while (glow.size() <= index) {
-            glow.add(0.0);
+            glow.add(new Hover(GLOW_TIME));
         }
 
-        double eased = MathUtils.lerp(glow.get(index), target, glowStep);
-        glow.set(index, eased);
-
+        double eased = glow.get(index).update(active ? 1.0 : hovered ? 0.45 : 0.0);
         return Color.blend(Shades.TRANS_DARK_GRAY, Shades.TRANS_GENERIC_LOW, eased);
     }
 
@@ -235,7 +241,7 @@ public class ListSettingElement extends SettingElement<AbstractListSetting> impl
     @Override
     public void mouseClicked(double mouseX, double mouseY, int button) {
         if (setting.isVisible()) {
-            int caret = y + detailsHeight;
+            int caret = y + detailsHeight + ROW_TOP_GAP;
             for (int i = 0; i < rows().size(); i++) {
                 if (isOverRow((int)mouseX, (int)mouseY, caret)) {
                     if (isOverRemove((int)mouseX, (int)mouseY, caret) && !rows().get(i).isEmpty()) {

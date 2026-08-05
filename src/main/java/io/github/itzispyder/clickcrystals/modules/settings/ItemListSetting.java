@@ -9,6 +9,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 import java.util.Arrays;
+import java.util.function.BooleanSupplier;
 import java.util.List;
 import java.util.Set;
 
@@ -22,6 +23,7 @@ public class ItemListSetting extends AbstractListSetting {
     // parsing every entry is not free and lists are read every tick, so keep the last result
     private String parsedFrom;
     private List<Item> parsed = List.of();
+    private BooleanSupplier literal = () -> false;
 
     public ItemListSetting(String name, String description, String def, String val) {
         super(name, description, def, val);
@@ -30,6 +32,14 @@ public class ItemListSetting extends AbstractListSetting {
     @Override
     public ItemListSettingElement toGuiElement(int x, int y) {
         return new ItemListSettingElement(this, x, y);
+    }
+
+    /**
+     * Whether entries are kept as typed. Modules that read the list as loose words rather
+     * than item names turn this on so the GUI stops resolving what you type to an item.
+     */
+    public boolean isLiteral() {
+        return literal.getAsBoolean();
     }
 
     /**
@@ -109,6 +119,13 @@ public class ItemListSetting extends AbstractListSetting {
 
     public static class Builder extends SettingBuilder<String, Builder, ItemListSetting> {
 
+        private BooleanSupplier literal = () -> false;
+
+        public Builder literalWhen(BooleanSupplier literal) {
+            this.literal = literal;
+            return this;
+        }
+
         public Builder def(Item... items) {
             return def(String.join(SEPARATOR, Arrays.stream(items).map(ItemListSetting::idOf).toList()));
         }
@@ -119,7 +136,9 @@ public class ItemListSetting extends AbstractListSetting {
 
         @Override
         public ItemListSetting buildSetting() {
-            return new ItemListSetting(name, description, def, getOrDef(val, def));
+            ItemListSetting setting = new ItemListSetting(name, description, def, getOrDef(val, def));
+            setting.literal = literal;
+            return setting;
         }
     }
 }

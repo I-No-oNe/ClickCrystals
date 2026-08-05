@@ -4,15 +4,15 @@ import io.github.itzispyder.clickcrystals.Global;
 import io.github.itzispyder.clickcrystals.gui.misc.Color;
 import io.github.itzispyder.clickcrystals.util.minecraft.render.states.*;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import org.joml.Matrix3x2fStack;
-
-import java.util.HashSet;
-import java.util.Set;
 
 public final class RenderUtils implements Global {
 
@@ -241,29 +241,30 @@ public final class RenderUtils implements Global {
     }
 
     /**
-     * Draws an item outside of gameplay without taking the client down with it.
+     * Draws an item wherever it can be drawn, and draws nothing where it cannot.
      * <p>
-     * Item models resolve against the world and the holding player, so drawing certain items
-     * from a menu (the main menu has neither) throws, and vanilla turns that into a crash
-     * report. An item that fails once is remembered and skipped from then on.
+     * An item's components come from data, so the registry only binds them once a world
+     * hands them over. Until then no stack of that item can even be built, which is why
+     * item icons stay blank on menus rather than taking the client down.
      *
      * @return whether the item was drawn
      */
-    public static boolean drawItemSafely(GuiGraphicsExtractor context, ItemStack item, int x, int y, int size) {
-        if (item == null || item.isEmpty() || uncrashableItems.contains(item.getItem())) {
+    public static boolean drawItemSafely(GuiGraphicsExtractor context, Item item, int x, int y, int size) {
+        if (item == null || item == Items.AIR || !componentsBound(item)) {
             return false;
         }
         try {
-            drawItem(context, item, x, y, size);
+            drawItem(context, item.getDefaultInstance(), x, y, size);
             return true;
         }
         catch (Throwable e) {
-            uncrashableItems.add(item.getItem());
             return false;
         }
     }
 
-    private static final Set<Item> uncrashableItems = new HashSet<>();
+    private static boolean componentsBound(Item item) {
+        return BuiltInRegistries.ITEM.wrapAsHolder(item) instanceof Holder.Reference<Item> ref && ref.areComponentsBound();
+    }
 
     public static int width() {
         return mc.getWindow().getGuiScaledWidth();
