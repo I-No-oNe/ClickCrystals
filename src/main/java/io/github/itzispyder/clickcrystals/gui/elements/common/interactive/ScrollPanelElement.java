@@ -81,6 +81,12 @@ public class ScrollPanelElement extends GuiElement {
         child.scrollOnPanel(this, 0);
     }
 
+    @Override
+    public void clearChildren() {
+        super.clearChildren();
+        recalculatePositions();
+    }
+
     public void updateBounds(GuiElement child) {
         if (child.y < limitTop) {
             limitTop = child.y;
@@ -142,7 +148,7 @@ public class ScrollPanelElement extends GuiElement {
         if (bl)
             onRender(context, mouseX, mouseY);
         for (GuiElement child : this.getChildren())
-            if (child.y + child.height > this.y || child.y < this.y + this.height)
+            if (child.y + child.height > this.y && child.y < this.y + this.height)
                 child.render(context, mouseX, mouseY);
 
         context.pose().popMatrix();
