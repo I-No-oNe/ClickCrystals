@@ -18,6 +18,18 @@ public interface SettingContainer {
         return StringSetting.create();
     }
 
+    default ListSetting.Builder createListSetting() {
+        return ListSetting.create();
+    }
+
+    default ItemListSetting.Builder createItemListSetting() {
+        return ItemListSetting.create();
+    }
+
+    default PlayerListSetting.Builder createPlayerListSetting() {
+        return PlayerListSetting.create();
+    }
+
     default KeybindSetting.Builder createBindSetting() {
         return KeybindSetting.create();
     }

@@ -74,7 +74,7 @@ public class SettingSectionElement extends GuiElement {
         text = settingSection.getName();
         RenderUtils.drawText(context, text, x + 5, caret, 0.8F, false);
         caret += 8;
-        RenderUtils.drawHorLine(context, x + 5, caret, width - 10, Shades.GRAY);
+        RenderUtils.fillRoundHoriLine(context, x + 5, caret, width - 10, 1, Shades.TRANS_GENERIC_LOW);
     }
 
     @Override

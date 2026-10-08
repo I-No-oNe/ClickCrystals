@@ -1,8 +1,11 @@
 package io.github.itzispyder.clickcrystals.gui.elements.browsingmode;
 
 import io.github.itzispyder.clickcrystals.gui.GuiElement;
+import io.github.itzispyder.clickcrystals.gui.misc.Color;
+import io.github.itzispyder.clickcrystals.gui.misc.Shades;
 import io.github.itzispyder.clickcrystals.gui.misc.animators.Animations;
 import io.github.itzispyder.clickcrystals.gui.misc.animators.Animator;
+import io.github.itzispyder.clickcrystals.gui.misc.animators.Hover;
 import io.github.itzispyder.clickcrystals.gui.screens.ModuleEditScreen;
 import io.github.itzispyder.clickcrystals.gui.screens.scripts.ClickScriptIDE;
 import io.github.itzispyder.clickcrystals.modrinth.ModrinthSupport;
@@ -15,6 +18,7 @@ public class ModuleElement extends GuiElement {
 
     private final Module module;
     private final boolean blacklisted;
+    private final Hover hover = new Hover(140);
     private Animator animator;
 
     public ModuleElement(Module module, int x, int y) {
@@ -46,19 +50,25 @@ public class ModuleElement extends GuiElement {
             animator = null;
         }
 
-        if (!blacklisted && isHovered(mouseX, mouseY)) {
-            RenderUtils.fillRect(context, x, y, width, height, 0x60FFFFFF);
+        // the row fades and slides in under the mouse instead of flashing a flat box
+        double glow = hover.update(!blacklisted && isHovered(mouseX, mouseY));
+        int slide = (int)Math.round(glow * 2);
+        if (glow > 0.01) {
+            RenderUtils.fillRoundRect(context, x, y, width - 6, height, 3, Color.blend(0x00FFFFFF, 0x60FFFFFF, glow));
         }
 
         String text;
 
         if (module != null) {
+            if (module.isEnabled()) {
+                RenderUtils.fillRoundVertLine(context, x, y + 2, height - 4, 2, Shades.GENERIC);
+            }
             text = "  %s".formatted(module.getOnOrOff());
-            RenderUtils.drawText(context, text, x, y + height / 3, 0.7F, false);
+            RenderUtils.drawText(context, text, x + slide, y + height / 3, 0.7F, false);
             text = " §8|   §f%s".formatted(module.getNameLimited());
-            RenderUtils.drawText(context, text, x + 20, y + height / 3, 0.7F, false);
+            RenderUtils.drawText(context, text, x + 20 + slide, y + height / 3, 0.7F, false);
             text = "§7- %s".formatted(module.getDescriptionLimited());
-            RenderUtils.drawText(context, text, x + width / 3, y + height / 3, 0.7F, false);
+            RenderUtils.drawText(context, text, x + width / 3 + slide, y + height / 3, 0.7F, false);
         }
 
         if (isAnimating) {
