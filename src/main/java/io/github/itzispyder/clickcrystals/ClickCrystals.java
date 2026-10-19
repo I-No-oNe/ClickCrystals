@@ -91,6 +91,7 @@ public final class ClickCrystals implements ModInitializer, Global {
     // provide update fixes here
     static {
         ProfileManager.renameOldFolder();
+        Config.migrateLegacyKeybinds();
     }
 
     public static Config config = JsonSerializable.load(Config.PATH_CONFIG, Config.class, new Config());

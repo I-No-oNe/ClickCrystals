@@ -138,6 +138,80 @@ public class Keybind implements Global {
         return EXTENDED_NAMES.getOrDefault(key, InputConstants.Type.KEYBOARD.getOrCreate(key).getDisplayName().getString());
     }
 
+    /**
+     * Converts a key code saved by a pre 26.3 build (GLFW) into the SDL scancode used since 26.3.
+     */
+    public static int fromLegacyKey(int glfwKey) {
+        if (glfwKey == NONE)
+            return NONE;
+
+        if (glfwKey >= 65 && glfwKey <= 90) // A-Z
+            return InputConstants.KEY_A + (glfwKey - 65);
+
+        if (glfwKey >= 48 && glfwKey <= 57) // 0-9
+            return glfwKey == 48 ? InputConstants.KEY_0 : InputConstants.KEY_1 + (glfwKey - 49);
+
+        if (glfwKey >= 290 && glfwKey <= 301) // F1-F12
+            return InputConstants.KEY_F1 + (glfwKey - 290);
+
+        if (glfwKey >= 302 && glfwKey <= 313) // F13-F24
+            return InputConstants.KEY_F13 + (glfwKey - 302);
+
+        if (glfwKey >= 320 && glfwKey <= 329) // keypad 0-9
+            return glfwKey == 320 ? InputConstants.KEY_NUMPAD0 : InputConstants.KEY_NUMPAD1 + (glfwKey - 321);
+
+        return switch (glfwKey) {
+            case 32 -> InputConstants.KEY_SPACE;
+            case 39 -> InputConstants.KEY_APOSTROPHE;
+            case 44 -> InputConstants.KEY_COMMA;
+            case 45 -> InputConstants.KEY_MINUS;
+            case 46 -> InputConstants.KEY_PERIOD;
+            case 47 -> InputConstants.KEY_SLASH;
+            case 59 -> InputConstants.KEY_SEMICOLON;
+            case 61 -> InputConstants.KEY_EQUALS;
+            case 91 -> InputConstants.KEY_LBRACKET;
+            case 92 -> InputConstants.KEY_BACKSLASH;
+            case 93 -> InputConstants.KEY_RBRACKET;
+            case 96 -> InputConstants.KEY_GRAVE;
+            case 256 -> InputConstants.KEY_ESCAPE;
+            case 257 -> InputConstants.KEY_RETURN;
+            case 258 -> InputConstants.KEY_TAB;
+            case 259 -> InputConstants.KEY_BACKSPACE;
+            case 260 -> InputConstants.KEY_INSERT;
+            case 261 -> InputConstants.KEY_DELETE;
+            case 262 -> InputConstants.KEY_RIGHT;
+            case 263 -> InputConstants.KEY_LEFT;
+            case 264 -> InputConstants.KEY_DOWN;
+            case 265 -> InputConstants.KEY_UP;
+            case 266 -> InputConstants.KEY_PAGEUP;
+            case 267 -> InputConstants.KEY_PAGEDOWN;
+            case 268 -> InputConstants.KEY_HOME;
+            case 269 -> InputConstants.KEY_END;
+            case 280 -> InputConstants.KEY_CAPSLOCK;
+            case 281 -> InputConstants.KEY_SCROLLLOCK;
+            case 282 -> InputConstants.KEY_NUMLOCK;
+            case 283 -> InputConstants.KEY_PRINTSCREEN;
+            case 284 -> InputConstants.KEY_PAUSE;
+            case 330 -> 99; // SDL_SCANCODE_KP_PERIOD
+            case 331 -> 84; // SDL_SCANCODE_KP_DIVIDE
+            case 332 -> InputConstants.KEY_MULTIPLY;
+            case 333 -> 86; // SDL_SCANCODE_KP_MINUS
+            case 334 -> InputConstants.KEY_ADD;
+            case 335 -> InputConstants.KEY_NUMPADENTER;
+            case 336 -> InputConstants.KEY_NUMPADEQUALS;
+            case 340 -> InputConstants.KEY_LSHIFT;
+            case 341 -> InputConstants.KEY_LCONTROL;
+            case 342 -> InputConstants.KEY_LALT;
+            case 343 -> InputConstants.KEY_LGUI;
+            case 344 -> InputConstants.KEY_RSHIFT;
+            case 345 -> InputConstants.KEY_RCONTROL;
+            case 346 -> InputConstants.KEY_RALT;
+            case 347 -> InputConstants.KEY_RGUI;
+            case 348 -> 101; // SDL_SCANCODE_APPLICATION
+            default -> NONE;
+        };
+    }
+
     public static int fromExtendedKeyName(String name) {
         for (var entry : EXTENDED_NAMES.entrySet())
             if (entry.getValue().equalsIgnoreCase(name))
