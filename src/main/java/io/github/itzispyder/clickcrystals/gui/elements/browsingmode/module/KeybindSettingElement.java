@@ -69,7 +69,7 @@ public class KeybindSettingElement extends SettingElement<KeybindSetting> implem
 
     public void updateDisplay() {
         int key = setting.getKey();
-        String name = InputConstants.Type.KEYSYM.getOrCreate(key).getDisplayName().getString();
+        String name = InputConstants.Type.KEYBOARD.getOrCreate(key).getDisplayName().getString();
 
         if (name == null || Keybind.EXTRAS.containsKey(key)) {
             name = Keybind.EXTRAS.get(key);

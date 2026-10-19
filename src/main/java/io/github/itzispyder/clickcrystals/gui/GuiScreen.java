@@ -235,7 +235,7 @@ public abstract class GuiScreen extends Screen implements Global {
     @Override
     public boolean keyPressed(KeyEvent input) {
         int keyCode = input.input();
-        int scanCode = input.scancode();
+        int scanCode = input.keycode();
         int modifiers = input.modifiers();
 
         if (keyCode == InputConstants.KEY_LSHIFT || keyCode == InputConstants.KEY_RSHIFT) {
@@ -262,7 +262,7 @@ public abstract class GuiScreen extends Screen implements Global {
     @Override
     public boolean keyReleased(KeyEvent input) {
         int keyCode = input.input();
-        int scanCode = input.scancode();
+        int scanCode = input.keycode();
         int modifiers = input.modifiers();
 
         if (keyCode == InputConstants.KEY_LSHIFT || keyCode == InputConstants.KEY_RSHIFT) {

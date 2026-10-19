@@ -5,7 +5,7 @@ import io.github.itzispyder.clickcrystals.util.StringUtils;
 import io.github.itzispyder.clickcrystals.util.misc.ManualMap;
 import com.mojang.blaze3d.platform.InputConstants;
 
-import java.awt.event.KeyEvent;
+import java.util.HashMap;
 import java.util.Map;
 
 public class Keybind implements Global {
@@ -50,6 +50,37 @@ public class Keybind implements Global {
             InputConstants.KEY_SPACE, "space",
             InputConstants.KEY_RETURN, "enter"
     );
+    private static final Map<Character, Integer> CHAR_KEYS = new HashMap<>();
+
+    static {
+        String letters = "abcdefghijklmnopqrstuvwxyz";
+        for (int i = 0; i < letters.length(); i++)
+            CHAR_KEYS.put(letters.charAt(i), InputConstants.KEY_A + i);
+
+        String digits = "1234567890";
+        for (int i = 0; i < digits.length(); i++)
+            CHAR_KEYS.put(digits.charAt(i), InputConstants.KEY_1 + i);
+
+        CHAR_KEYS.put('-', InputConstants.KEY_MINUS);
+        CHAR_KEYS.put('=', InputConstants.KEY_EQUALS);
+        CHAR_KEYS.put('[', InputConstants.KEY_LBRACKET);
+        CHAR_KEYS.put(']', InputConstants.KEY_RBRACKET);
+        CHAR_KEYS.put('\\', InputConstants.KEY_BACKSLASH);
+        CHAR_KEYS.put(';', InputConstants.KEY_SEMICOLON);
+        CHAR_KEYS.put('\'', InputConstants.KEY_APOSTROPHE);
+        CHAR_KEYS.put('`', InputConstants.KEY_GRAVE);
+        CHAR_KEYS.put(',', InputConstants.KEY_COMMA);
+        CHAR_KEYS.put('.', InputConstants.KEY_PERIOD);
+        CHAR_KEYS.put('/', InputConstants.KEY_SLASH);
+    }
+
+    private static Character charOfKey(int key) {
+        for (var entry : CHAR_KEYS.entrySet())
+            if (entry.getValue() == key)
+                return entry.getKey();
+        return null;
+    }
+
     private final String name, id;
     private int key, defaultKey;
     private KeyAction keyAction, changeAction;
@@ -73,7 +104,7 @@ public class Keybind implements Global {
     }
 
     public boolean canPress(int keyCode, int scanCode) {
-        boolean notNull = InputConstants.Type.KEYSYM.getOrCreate(key) != InputConstants.UNKNOWN;
+        boolean notNull = InputConstants.Type.KEYBOARD.getOrCreate(key) != InputConstants.UNKNOWN;
         boolean isExtra = EXTRAS.containsKey(key);
         boolean isKey = keyCode == key;
         return (notNull || isExtra) && isKey;
@@ -92,15 +123,19 @@ public class Keybind implements Global {
     }
 
     public String getKeyName() {
-        if (key >= InputConstants.KEY_APOSTROPHE && key <= InputConstants.KEY_GRAVE) {
-            return String.valueOf((char)key).toLowerCase();
-        }
+        Character ch = charOfKey(key);
+        if (ch != null)
+            return String.valueOf(ch);
 
-        return EXTRAS.getOrDefault(key, InputConstants.Type.KEYSYM.getOrCreate(key).getDisplayName().getString());
+        return EXTRAS.getOrDefault(key, InputConstants.Type.KEYBOARD.getOrCreate(key).getDisplayName().getString());
     }
 
     public static String getExtendedKeyName(int key, int scancode) {
-        return EXTENDED_NAMES.getOrDefault(key, InputConstants.Type.KEYSYM.getOrCreate(key).getDisplayName().getString());
+        Character ch = charOfKey(key);
+        if (ch != null)
+            return String.valueOf(ch);
+
+        return EXTENDED_NAMES.getOrDefault(key, InputConstants.Type.KEYBOARD.getOrCreate(key).getDisplayName().getString());
     }
 
     public static int fromExtendedKeyName(String name) {
@@ -109,8 +144,8 @@ public class Keybind implements Global {
                 return entry.getKey();
 
         if (name.length() == 1) {
-            int key = KeyEvent.getExtendedKeyCodeForChar(name.charAt(0));
-            return key != 0 ? key : NONE;
+            Integer key = CHAR_KEYS.get(Character.toLowerCase(name.charAt(0)));
+            return key != null ? key : NONE;
         }
         return NONE;
     }

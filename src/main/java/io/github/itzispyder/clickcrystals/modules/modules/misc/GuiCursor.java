@@ -86,7 +86,7 @@ public class GuiCursor extends Module implements Listener {
         Window win = mc.getWindow();
         double ratW = (double) win.getGuiScaledWidth() / win.getScreenWidth();
         double ratH = (double) win.getGuiScaledHeight() / win.getScreenHeight();
-        InputConstants.grabOrReleaseMouse(win, InputConstants.CURSOR_NORMAL, x / ratW, y / ratH);
+        InputConstants.releaseMouse(win, x / ratW, y / ratH);
         // Update internal mouse state directly for Wayland compatibility,
         // where cursor positioning silently fails in normal cursor mode
         ((AccessorMouseHandler) mc.mouseHandler).clickCrystals$setCursorPos(x / ratW, y / ratH);
