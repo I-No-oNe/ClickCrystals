@@ -11,6 +11,7 @@ import io.github.itzispyder.clickcrystals.util.minecraft.PlayerUtils;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
+import net.minecraft.world.level.block.entity.SignTextSlot;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -35,7 +36,7 @@ public abstract class MixinLocalPlayer implements Global {
         }
     }
     @Inject(method = "openTextEdit", at = @At("HEAD"), cancellable = true)
-    private void cancelOpenContainer(SignBlockEntity sign, boolean front, CallbackInfo ci) {
+    private void cancelOpenContainer(SignBlockEntity sign, SignTextSlot slot, CallbackInfo ci) {
         NoInteractions noInteractions = Module.get(NoInteractions.class);
         if (noInteractions.isEnabled() && !noInteractions.allowSign.getVal()) {
             ci.cancel();
